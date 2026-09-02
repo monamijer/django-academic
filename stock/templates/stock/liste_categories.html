@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block titre %}Catégories{% endblock %}
+{% block contenu %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3><i class="bi bi-tags"></i> Catégories / types de produits</h3>
+  {% if perms.stock.add_categorie or user.est_administrateur %}
+  <a href="{% url 'stock:creer_categorie' %}" class="btn btn-primary btn-icon"><i class="bi bi-plus-lg"></i> Ajouter</a>
+  {% endif %}
+</div>
+<div class="row g-3">
+  {% for c in categories %}
+  <div class="col-md-4">
+    <div class="card h-100" style="border-left:5px solid {{ c.couleur }};">
+      <div class="card-body">
+        <h5>{{ c.nom }} {% if not c.est_active %}<span class="badge bg-secondary">Inactive</span>{% endif %}</h5>
+        <p class="text-muted small">{{ c.description|default:"—" }}</p>
+        <p>{{ c.produits.count }} produit(s)</p>
+        {% if perms.stock.change_categorie or user.est_administrateur %}
+        <a href="{% url 'stock:modifier_categorie' c.pk %}" class="btn btn-sm btn-outline-primary btn-icon"><i class="bi bi-pencil"></i> Modifier</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% empty %}<p class="text-muted">Aucune catégorie.</p>{% endfor %}
+</div>
+{% endblock %}

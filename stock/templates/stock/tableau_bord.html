@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block titre %}Tableau de bord{% endblock %}
+{% block contenu %}
+<h3><i class="bi bi-speedometer2"></i> Tableau de bord</h3>
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card section-produits h-100"><div class="card-body">
+      <div class="text-muted"><i class="bi bi-box-seam"></i> Produits actifs</div>
+      <div class="fs-2 fw-bold">{{ nb_produits }}</div>
+    </div></div>
+  </div>
+  <div class="col-md-3">
+    <div class="card h-100" style="border-left:5px solid var(--c-alerte);"><div class="card-body">
+      <div class="text-muted"><i class="bi bi-exclamation-triangle"></i> En alerte de stock</div>
+      <div class="fs-2 fw-bold text-danger">{{ nb_alertes }}</div>
+    </div></div>
+  </div>
+  <div class="col-md-3">
+    <div class="card h-100" style="border-left:5px solid #6c757d;"><div class="card-body">
+      <div class="text-muted"><i class="bi bi-calendar-x"></i> Produits périmés</div>
+      <div class="fs-2 fw-bold">{{ nb_perimes }}</div>
+    </div></div>
+  </div>
+  <div class="col-md-3">
+    <div class="card section-mouvements h-100"><div class="card-body">
+      <div class="text-muted"><i class="bi bi-tags"></i> Catégories</div>
+      <div class="fs-2 fw-bold">{{ nb_categories }}</div>
+    </div></div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card section-mouvements">
+      <div class="card-header bg-white"><i class="bi bi-arrow-left-right"></i> Derniers mouvements</div>
+      <ul class="list-group list-group-flush">
+        {% for m in derniers_mouvements %}
+        <li class="list-group-item d-flex justify-content-between">
+          <span>{% if m.type_mouvement == "ENTREE" %}<i class="bi bi-box-arrow-in-down text-success"></i>{% else %}<i class="bi bi-box-arrow-up text-danger"></i>{% endif %} {{ m.produit }}</span>
+          <span class="text-muted small">{{ m.quantite }} — {{ m.date_mouvement|date:"d/m H:i" }}</span>
+        </li>
+        {% empty %}<li class="list-group-item text-muted">Aucun mouvement.</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card" style="border-left:5px solid var(--c-alerte);">
+      <div class="card-header bg-white"><i class="bi bi-exclamation-triangle"></i> Produits en alerte</div>
+      <ul class="list-group list-group-flush">
+        {% for p in produits_alerte %}
+        <li class="list-group-item d-flex justify-content-between">
+          <span>{{ p.nom }}</span><span class="badge bg-danger">{{ p.quantite_stock }} {{ p.unite }}</span>
+        </li>
+        {% empty %}<li class="list-group-item text-muted">Aucune alerte, tout va bien.</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

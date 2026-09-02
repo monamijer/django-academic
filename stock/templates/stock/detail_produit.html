@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block titre %}{{ produit.nom }}{% endblock %}
+{% block contenu %}
+<div class="card section-produits mb-3">
+  <div class="card-body">
+    <h4><i class="bi bi-box-seam"></i> {{ produit.nom }} <span class="text-muted fs-6">({{ produit.reference }})</span></h4>
+    <div class="row">
+      <div class="col-md-3"><strong>Catégorie :</strong> <span class="badge-couleur" style="background:{{ produit.categorie.couleur }}"></span> {{ produit.categorie.nom }}</div>
+      <div class="col-md-3"><strong>Stock :</strong> {{ produit.quantite_stock }} {{ produit.unite }} {% if produit.en_alerte %}<span class="badge bg-danger">Alerte</span>{% endif %}</div>
+      <div class="col-md-3"><strong>Prix unitaire :</strong> {{ produit.prix_unitaire }}</div>
+      <div class="col-md-3"><strong>Péremption :</strong> {{ produit.date_peremption|date:"d/m/Y"|default:"—" }} {% if produit.est_perime %}<span class="badge bg-danger">Périmé</span>{% endif %}</div>
+    </div>
+    <div class="mt-3 no-print">
+      <a href="{% url 'stock:enregistrer_mouvement' %}?produit={{ produit.pk }}" class="btn btn-success btn-icon"><i class="bi bi-arrow-left-right"></i> Nouveau mouvement</a>
+      {% if perms.stock.change_produit or user.est_administrateur %}<a href="{% url 'stock:modifier_produit' produit.pk %}" class="btn btn-outline-primary btn-icon"><i class="bi bi-pencil"></i> Modifier</a>{% endif %}
+      <a href="{% url 'stock:liste_produits' %}" class="btn btn-outline-secondary">Retour</a>
+    </div>
+  </div>
+</div>
+<div class="card section-mouvements">
+  <div class="card-header bg-white"><i class="bi bi-clock-history"></i> Derniers mouvements</div>
+  <ul class="list-group list-group-flush">
+    {% for m in mouvements %}
+    <li class="list-group-item d-flex justify-content-between">
+      <span>{% if m.type_mouvement == "ENTREE" %}<i class="bi bi-box-arrow-in-down text-success"></i> Entrée{% else %}<i class="bi bi-box-arrow-up text-danger"></i> Sortie{% endif %} — {{ m.quantite }} {{ produit.unite }} {% if m.note %}({{ m.note }}){% endif %}</span>
+      <span class="text-muted small">{{ m.utilisateur|default:"—" }} — {{ m.date_mouvement|date:"d/m/Y H:i" }}</span>
+    </li>
+    {% empty %}<li class="list-group-item text-muted">Aucun mouvement enregistré.</li>{% endfor %}
+  </ul>
+</div>
+{% endblock %}

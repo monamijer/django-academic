@@ -1,0 +1,73 @@
+{% load static %}<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block titre %}GESTOCK{% endblock %} — Gestion de stock</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<style>
+  :root{
+    --c-utilisateurs:#6f42c1;   /* violet = comptes / utilisateurs */
+    --c-produits:#0d6efd;       /* bleu = produits / stock */
+    --c-mouvements:#198754;     /* vert = mouvements (entrées/sorties) */
+    --c-rapports:#fd7e14;       /* orange = rapports */
+    --c-alerte:#dc3545;         /* rouge = alertes / suppression */
+  }
+  body{background:#f4f6f9;}
+  .navbar-brand i{color:#ffc107;}
+  .section-utilisateurs{border-left:5px solid var(--c-utilisateurs);}
+  .section-produits{border-left:5px solid var(--c-produits);}
+  .section-mouvements{border-left:5px solid var(--c-mouvements);}
+  .section-rapports{border-left:5px solid var(--c-rapports);}
+  .card{border-radius:.75rem;}
+  .btn-icon{display:inline-flex;align-items:center;gap:.4rem;}
+  .badge-couleur{width:.9rem;height:.9rem;border-radius:50%;display:inline-block;}
+  .nav-link.active{font-weight:600;}
+  @media print{
+    .no-print{display:none !important;}
+    body{background:#fff;}
+    .card{border:1px solid #ccc;}
+  }
+</style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark no-print" style="background:#1e2a3a;">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="{% url 'stock:tableau_bord' %}"><i class="bi bi-boxes"></i> GESTOCK</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav1"><span class="navbar-toggler-icon"></span></button>
+    <div class="collapse navbar-collapse" id="nav1">
+      {% if user.is_authenticated %}
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link" href="{% url 'stock:tableau_bord' %}"><i class="bi bi-speedometer2"></i> Tableau de bord</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'stock:liste_produits' %}"><i class="bi bi-box-seam"></i> Produits</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'stock:liste_categories' %}"><i class="bi bi-tags"></i> Catégories</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'stock:liste_mouvements' %}"><i class="bi bi-arrow-left-right"></i> Mouvements</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'rapports:centre_rapports' %}"><i class="bi bi-printer"></i> Rapports</a></li>
+        {% if user.est_administrateur or user.is_superuser %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'comptes:liste_utilisateurs' %}"><i class="bi bi-people"></i> Utilisateurs</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'comptes:historique' %}"><i class="bi bi-clock-history"></i> Historique</a></li>
+        {% endif %}
+      </ul>
+      <span class="navbar-text text-light me-3"><i class="bi bi-person-circle"></i> {{ user.get_full_name|default:user.username }}
+        {% if user.est_administrateur %}<span class="badge bg-warning text-dark">Admin</span>{% endif %}
+      </span>
+      <a href="{% url 'comptes:deconnexion' %}" class="btn btn-outline-light btn-sm btn-icon"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+<div class="container-fluid py-4 px-4">
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show no-print" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  {% endfor %}
+  {% block contenu %}{% endblock %}
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
