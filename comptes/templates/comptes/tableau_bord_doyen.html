@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block titre %}Tableau de bord{% endblock %}
+{% block contenu %}
+<div class="page-head"><div><h1>Faculté {{ faculte.nom }}</h1><div class="subtitle">{{ role_label }}</div></div></div>
+<div class="stat-row">
+  <div class="stat-card"><span class="icon-circle" style="background:{{ faculte.couleur|default:'#16233F' }};"><i class="bi bi-diagram-3"></i></span><div><div class="value">{{ nb_departements }}</div><div class="label">Départements</div></div></div>
+  <div class="stat-card"><span class="icon-circle" style="background:#2E7D4F;"><i class="bi bi-people"></i></span><div><div class="value">{{ nb_etudiants }}</div><div class="label">Étudiants</div></div></div>
+  <div class="stat-card"><span class="icon-circle" style="background:#A9812F;"><i class="bi bi-journal-bookmark"></i></span><div><div class="value">{{ nb_cours }}</div><div class="label">Cours actifs</div></div></div>
+</div>
+<p class="mt-4" style="color:var(--muted);">Vous gérez les départements, filières et cours de la faculté {{ faculte.nom }}.</p>
+{% endblock %}

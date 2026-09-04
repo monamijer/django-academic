@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block titre %}Comptes{% endblock %}
+{% block contenu %}
+<div class="page-head">
+  <div><h1>Comptes utilisateurs</h1><div class="subtitle">Tous rôles confondus</div></div>
+  <a href="{% url 'comptes:creer_utilisateur' %}" class="btn btn-brand btn-icon"><i class="bi bi-person-plus"></i> Ajouter</a>
+</div>
+<form method="get" class="filter-bar no-print">
+  <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Rechercher...">
+  <select name="role" class="form-select">
+    <option value="">Tous les rôles</option>
+    {% for val, label in roles %}<option value="{{ val }}" {% if role == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <button class="btn btn-outline-brand btn-icon"><i class="bi bi-search"></i> Rechercher</button>
+</form>
+<div class="panel table-panel">
+  <table class="table mb-0">
+    <thead><tr><th>Utilisateur</th><th>Rôle</th><th>Périmètre</th><th>Statut</th><th class="no-print">Actions</th></tr></thead>
+    <tbody>
+      {% for u in utilisateurs %}
+      <tr>
+        <td style="font-weight:600;"><i class="bi bi-person-circle" style="color:var(--muted);"></i> {{ u.get_full_name|default:u.username }}</td>
+        <td><span class="tag tag-muted">{{ u.get_role_display }}</span></td>
+        <td style="color:var(--muted);">{{ u.faculte|default:"" }}{{ u.departement|default:"" }}{% if not u.faculte and not u.departement %}—{% endif %}</td>
+        <td>{% if u.est_actif_compte %}<span class="tag tag-ok"><i class="bi bi-check-circle"></i> Actif</span>{% else %}<span class="tag tag-bad"><i class="bi bi-slash-circle"></i> Désactivé</span>{% endif %}</td>
+        <td class="no-print">
+          <a href="{% url 'comptes:modifier_utilisateur' u.pk %}" class="icon-btn" title="Modifier"><i class="bi bi-pencil"></i></a>
+          <a href="{% url 'comptes:basculer_activation' u.pk %}" class="icon-btn" title="Activer/Désactiver"><i class="bi bi-toggle2-on"></i></a>
+          <a href="{% url 'comptes:supprimer_utilisateur' u.pk %}" class="icon-btn danger" title="Supprimer"><i class="bi bi-trash"></i></a>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="5" class="text-center" style="color:var(--muted); padding:2rem;">Aucun compte trouvé.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

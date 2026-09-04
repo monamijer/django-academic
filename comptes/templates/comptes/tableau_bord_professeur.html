@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block titre %}Tableau de bord{% endblock %}
+{% block contenu %}
+<div class="page-head"><div><h1>Mes cours</h1><div class="subtitle">{{ role_label }}</div></div></div>
+<div class="stat-row mb-4">
+  <div class="stat-card"><span class="icon-circle" style="background:#A9812F;"><i class="bi bi-journal-bookmark"></i></span><div><div class="value">{{ cours.count }}</div><div class="label">Cours enseignés</div></div></div>
+  <div class="stat-card"><span class="icon-circle" style="background:#2E7D4F;"><i class="bi bi-people"></i></span><div><div class="value">{{ nb_etudiants }}</div><div class="label">Étudiants inscrits</div></div></div>
+</div>
+<div class="person-grid">
+  {% for c in cours %}
+  <a href="{% url 'etudiants:notes_cours' c.pk %}" class="person-card">
+    <div class="swatch" style="background:var(--brand);"></div>
+    <div class="body">
+      <span class="cat-tag">{{ c.departement.nom }}</span>
+      <span class="name">{{ c.nom }}</span>
+      <span class="ref">{{ c.code }} — {{ c.credits }} crédits</span>
+      <span class="tag tag-muted">{{ c.inscriptions.count }} inscrit{{ c.inscriptions.count|pluralize }}</span>
+    </div>
+  </a>
+  {% empty %}<div class="panel" style="grid-column:1/-1; padding:2rem; text-align:center; color:var(--muted);">Aucun cours assigné.</div>{% endfor %}
+</div>
+{% endblock %}

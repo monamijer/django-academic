@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block titre %}Tableau de bord{% endblock %}
+{% block contenu %}
+<div class="page-head"><div><h1>Département {{ departement.nom }}</h1><div class="subtitle">{{ role_label }}</div></div></div>
+<div class="stat-row mb-4">
+  <div class="stat-card"><span class="icon-circle" style="background:#2E7D4F;"><i class="bi bi-people"></i></span><div><div class="value">{{ nb_etudiants }}</div><div class="label">Étudiants</div></div></div>
+  <div class="stat-card"><span class="icon-circle" style="background:#A9812F;"><i class="bi bi-journal-bookmark"></i></span><div><div class="value">{{ nb_cours }}</div><div class="label">Cours actifs</div></div></div>
+</div>
+<div class="panel">
+  <div class="panel-head"><i class="bi bi-exclamation-triangle" style="color:var(--bad);"></i> Étudiants en difficulté (moyenne &lt; 10)</div>
+  <div>
+  {% for e in etudiants_en_difficulte %}
+    <div style="display:flex; justify-content:space-between; padding:.75rem 1.25rem; border-bottom:1px solid var(--line);">
+      <span>{{ e }}</span><span class="tag tag-bad">{{ e.moyenne_generale }}/20</span>
+    </div>
+  {% empty %}<div style="padding:1.5rem; color:var(--muted); text-align:center;">Aucun étudiant en difficulté détecté.</div>{% endfor %}
+  </div>
+</div>
+{% endblock %}

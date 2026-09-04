@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block titre %}Tableau de bord{% endblock %}
+{% block contenu %}
+<div class="page-head"><div><h1>Vue d'ensemble de l'université</h1><div class="subtitle">{{ role_label }}</div></div></div>
+<div class="stat-row">
+  <div class="stat-card"><span class="icon-circle" style="background:#16233F;"><i class="bi bi-bank"></i></span><div><div class="value">{{ nb_facultes }}</div><div class="label">Facultés actives</div></div></div>
+  <div class="stat-card"><span class="icon-circle" style="background:#A9812F;"><i class="bi bi-diagram-3"></i></span><div><div class="value">{{ nb_departements }}</div><div class="label">Départements actifs</div></div></div>
+  <div class="stat-card"><span class="icon-circle" style="background:#2E7D4F;"><i class="bi bi-people"></i></span><div><div class="value">{{ nb_etudiants }}</div><div class="label">Étudiants actifs</div></div></div>
+  <div class="stat-card"><span class="icon-circle" style="background:#A6332B;"><i class="bi bi-person-badge"></i></span><div><div class="value">{{ nb_personnel }}</div><div class="label">Membres du personnel</div></div></div>
+</div>
+<p class="mt-4" style="color:var(--muted);">Utilisez les onglets ci-dessus pour consulter les facultés, départements, cours, étudiants et rapports de l'ensemble de l'université.</p>
+{% endblock %}

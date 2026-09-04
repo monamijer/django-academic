@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block titre %}Tableau de bord{% endblock %}
+{% block contenu %}
+<div class="page-head"><div><h1>Bonjour {{ user.first_name|default:user.username }}</h1><div class="subtitle">{{ fiche.filiere }} — Promotion {{ fiche.promotion }}</div></div></div>
+<div class="stat-row mb-4">
+  <div class="stat-card"><span class="icon-circle" style="background:#A9812F;"><i class="bi bi-graph-up"></i></span><div><div class="value">{{ moyenne|default:"—" }}{% if moyenne %}/20{% endif %}</div><div class="label">Moyenne générale</div></div></div>
+  <div class="stat-card"><span class="icon-circle" style="background:#2E7D4F;"><i class="bi bi-award"></i></span><div><div class="value" style="font-size:1.2rem;">{{ mention }}</div><div class="label">Mention</div></div></div>
+</div>
+<div class="panel">
+  <div class="panel-head"><i class="bi bi-journal-check"></i> Mes notes</div>
+  <div class="table-panel">
+    <table class="table mb-0">
+      <thead><tr><th>Cours</th><th>Année académique</th><th>Note</th></tr></thead>
+      <tbody>
+      {% for n in notes %}
+        <tr><td>{{ n.cours }}</td><td>{{ n.annee_academique }}</td><td><strong>{{ n.valeur }}</strong>/20</td></tr>
+      {% empty %}<tr><td colspan="3" class="text-center" style="color:var(--muted); padding:2rem;">Aucune note enregistrée.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

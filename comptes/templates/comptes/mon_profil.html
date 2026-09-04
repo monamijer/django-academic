@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block titre %}Mon profil{% endblock %}
+{% block contenu %}
+<div class="page-head"><div><h1>Mon profil</h1><div class="subtitle">{{ user.get_role_display }}</div></div></div>
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="panel" style="padding:1.5rem;">
+      <h5><i class="bi bi-person-lines-fill"></i> Informations personnelles</h5>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="form" value="infos">
+        {% for field in form %}
+          <div class="mb-3">
+            <label class="form-label">{{ field.label }}</label>{{ field }}
+            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+          </div>
+        {% endfor %}
+        <button class="btn btn-brand btn-icon"><i class="bi bi-check-lg"></i> Enregistrer</button>
+      </form>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="panel mb-3" style="padding:1.5rem;">
+      <h5><i class="bi bi-shield-lock"></i> Changer mon mot de passe</h5>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="form" value="mot_de_passe">
+        {% for field in mdp_form %}
+          <div class="mb-3">
+            <label class="form-label">{{ field.label }}</label>{{ field }}
+            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+          </div>
+        {% endfor %}
+        <button class="btn btn-outline-brand btn-icon"><i class="bi bi-key"></i> Changer le mot de passe</button>
+      </form>
+    </div>
+    <div class="panel" style="padding:1.25rem;">
+      <h6 style="color:var(--muted); text-transform:none;"><i class="bi bi-info-circle"></i> Périmètre (lecture seule)</h6>
+      <p class="mb-1"><strong>Rôle :</strong> {{ user.get_role_display }}</p>
+      {% if user.faculte %}<p class="mb-1"><strong>Faculté :</strong> {{ user.faculte }}</p>{% endif %}
+      {% if user.departement %}<p class="mb-1"><strong>Département :</strong> {{ user.departement }}</p>{% endif %}
+      <p class="mb-0" style="color:var(--muted); font-size:.85rem;">Seul un administrateur système peut modifier votre rôle ou votre périmètre.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
