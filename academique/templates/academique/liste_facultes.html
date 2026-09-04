@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block titre %}Facultés{% endblock %}
+{% block contenu %}
+<div class="page-head">
+  <div><h1>Facultés</h1><div class="subtitle">Structure de l'université</div></div>
+  <a href="{% url 'academique:creer_faculte' %}" class="btn btn-brand btn-icon"><i class="bi bi-plus-lg"></i> Ajouter</a>
+</div>
+<form method="get" class="filter-bar no-print">
+  <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Rechercher...">
+  <button class="btn btn-outline-brand btn-icon"><i class="bi bi-search"></i> Rechercher</button>
+</form>
+<div class="person-grid">
+  {% for f in facultes %}
+  <div class="person-card">
+    <div class="swatch" style="background:{{ f.couleur }};"></div>
+    <div class="body">
+      <span class="cat-tag">Faculté</span>
+      <span class="name">{{ f.nom }}</span>
+      <span class="ref">{{ f.code }}</span>
+      <span class="tag tag-muted">{{ f.departements.count }} département{{ f.departements.count|pluralize }}</span>
+      {% if not f.est_active %}<span class="tag tag-bad">Inactive</span>{% endif %}
+    </div>
+    <div class="footer-actions no-print">
+      <a href="{% url 'academique:modifier_faculte' f.pk %}" class="icon-btn" title="Modifier"><i class="bi bi-pencil"></i></a>
+    </div>
+  </div>
+  {% empty %}<div class="panel" style="grid-column:1/-1; padding:2rem; text-align:center; color:var(--muted);">Aucune faculté.</div>{% endfor %}
+</div>
+{% endblock %}
