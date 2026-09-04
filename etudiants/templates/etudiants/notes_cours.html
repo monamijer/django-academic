@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block titre %}Notes — {{ cours }}{% endblock %}
+{% block contenu %}
+<div class="page-head">
+  <div><h1>{{ cours.nom }}</h1><div class="subtitle">{{ cours.code }} — {{ notes.count }} note{{ notes.count|pluralize }} saisie{{ notes.count|pluralize }}</div></div>
+  <a href="{% url 'etudiants:saisir_note' cours.pk %}" class="btn btn-brand btn-icon"><i class="bi bi-plus-lg"></i> Saisir une note</a>
+</div>
+<div class="panel table-panel">
+  <table class="table mb-0">
+    <thead><tr><th>Étudiant</th><th>Année académique</th><th>Note</th><th>Évaluée par</th></tr></thead>
+    <tbody>
+      {% for n in notes %}
+      <tr><td>{{ n.etudiant }}</td><td>{{ n.annee_academique }}</td><td><strong>{{ n.valeur }}</strong>/20</td><td style="color:var(--muted);">{{ n.evaluee_par|default:"—" }}</td></tr>
+      {% empty %}<tr><td colspan="4" class="text-center" style="color:var(--muted); padding:2rem;">Aucune note saisie.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

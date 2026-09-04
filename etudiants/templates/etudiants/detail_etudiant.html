@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block titre %}{{ etudiant }}{% endblock %}
+{% block contenu %}
+<div class="panel mb-3" style="padding:1.5rem;">
+  <div class="d-flex justify-content-between flex-wrap gap-3">
+    <div>
+      <span class="cat-tag" style="color:var(--muted); font-weight:700; font-size:.78rem;">{{ etudiant.filiere.departement }}</span>
+      <h1 style="margin:.15rem 0;">{{ etudiant.utilisateur.get_full_name|default:etudiant.utilisateur.username }}</h1>
+      <span class="ref" style="font-family:'JetBrains Mono',monospace; color:var(--muted);">Matricule : {{ etudiant.matricule }}</span>
+      <div class="tags mt-2">
+        {% if not etudiant.est_actif %}<span class="tag tag-muted">Inactif</span>{% endif %}
+        {% if etudiant.en_difficulte %}<span class="tag tag-bad"><i class="bi bi-exclamation-triangle"></i> En difficulté</span>{% endif %}
+      </div>
+    </div>
+    <div class="text-end">
+      <div style="font-size:2.1rem; font-weight:700; color:var(--ink); font-family:'Fraunces',serif;">{{ etudiant.moyenne_generale|default:"—" }}{% if etudiant.moyenne_generale %}/20{% endif %}</div>
+      <div style="color:var(--brand-dark); font-weight:700;">{{ etudiant.mention }}</div>
+    </div>
+  </div>
+  <div class="row mt-3 pt-3" style="border-top:1px solid var(--line);">
+    <div class="col-md-4"><div style="color:var(--muted); font-size:.78rem; font-weight:700;">FILIÈRE</div>{{ etudiant.filiere }}</div>
+    <div class="col-md-4"><div style="color:var(--muted); font-size:.78rem; font-weight:700;">PROMOTION</div>{{ etudiant.promotion }}</div>
+    <div class="col-md-4"><div style="color:var(--muted); font-size:.78rem; font-weight:700;">EMAIL</div>{{ etudiant.utilisateur.email|default:"—" }}</div>
+  </div>
+  <div class="mt-3 no-print">
+    <a href="{% url 'etudiants:modifier_etudiant' etudiant.pk %}" class="btn btn-outline-brand btn-icon"><i class="bi bi-pencil"></i> Modifier</a>
+    <a href="{% url 'etudiants:basculer_activation_etudiant' etudiant.pk %}" class="btn btn-outline-secondary btn-icon"><i class="bi bi-toggle2-on"></i> Activer/Désactiver</a>
+    <a href="{% url 'rapports:releve_notes' etudiant.pk %}" class="btn btn-outline-secondary btn-icon"><i class="bi bi-printer"></i> Relevé de notes</a>
+  </div>
+</div>
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="panel">
+      <div class="panel-head"><i class="bi bi-journal-check"></i> Notes</div>
+      <div class="table-panel">
+        <table class="table mb-0"><thead><tr><th>Cours</th><th>Année</th><th>Note</th></tr></thead>
+        <tbody>
+        {% for n in notes %}<tr><td>{{ n.cours }}</td><td>{{ n.annee_academique }}</td><td><strong>{{ n.valeur }}</strong>/20</td></tr>
+        {% empty %}<tr><td colspan="3" class="text-center" style="color:var(--muted); padding:1.5rem;">Aucune note.</td></tr>{% endfor %}
+        </tbody></table>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="panel">
+      <div class="panel-head"><i class="bi bi-clipboard-check"></i> Inscriptions</div>
+      <div class="table-panel">
+        <table class="table mb-0"><thead><tr><th>Cours</th><th>Année</th></tr></thead>
+        <tbody>
+        {% for i in inscriptions %}<tr><td>{{ i.cours }}</td><td>{{ i.annee_academique }}</td></tr>
+        {% empty %}<tr><td colspan="2" class="text-center" style="color:var(--muted); padding:1.5rem;">Aucune inscription.</td></tr>{% endfor %}
+        </tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
