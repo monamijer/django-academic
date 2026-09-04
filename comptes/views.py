@@ -1,6 +1,8 @@
+from functools import wraps
+
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash, views as auth_views
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import ListView
@@ -14,6 +16,20 @@ from .models import JournalActivite, Utilisateur, enregistrer_activite
 
 def est_admin_systeme(user):
     return user.is_authenticated and user.est_admin_systeme
+
+
+def exiger_admin_systeme(vue):
+    """Comme @user_passes_test, mais redirige un utilisateur déjà connecté vers
+    son tableau de bord (avec un message) plutôt que vers la page de connexion.
+    Passer par LOGIN_URL bouclerait indéfiniment : redirect_authenticated_user
+    sur la vue de connexion renverrait l'utilisateur droit vers la page bloquée."""
+    @wraps(vue)
+    def wrapper(request, *args, **kwargs):
+        if not est_admin_systeme(request.user):
+            messages.error(request, "Accès réservé à l'administrateur système.")
+            return redirect("comptes:tableau_bord")
+        return vue(request, *args, **kwargs)
+    return login_required(wrapper)
 
 
 class ConnexionView(auth_views.LoginView):
@@ -125,8 +141,7 @@ def mon_profil(request):
 
 # --- Gestion administrative des comptes (réservée à l'administrateur système) ---
 
-@login_required
-@user_passes_test(est_admin_systeme)
+@exiger_admin_systeme
 def liste_utilisateurs(request):
     q = request.GET.get("q", "").strip()
     role = request.GET.get("role", "")
@@ -141,8 +156,7 @@ def liste_utilisateurs(request):
     })
 
 
-@login_required
-@user_passes_test(est_admin_systeme)
+@exiger_admin_systeme
 def creer_utilisateur(request):
     if request.method == "POST":
         form = UtilisateurCreationForm(request.POST)
@@ -156,8 +170,7 @@ def creer_utilisateur(request):
     return render(request, "comptes/formulaire_utilisateur.html", {"form": form, "titre": "Ajouter un compte", "creation": True})
 
 
-@login_required
-@user_passes_test(est_admin_systeme)
+@exiger_admin_systeme
 def modifier_utilisateur(request, pk):
     u = get_object_or_404(Utilisateur, pk=pk)
     if request.method == "POST":
@@ -172,8 +185,7 @@ def modifier_utilisateur(request, pk):
     return render(request, "comptes/formulaire_utilisateur.html", {"form": form, "titre": f"Modifier {u}", "creation": False})
 
 
-@login_required
-@user_passes_test(est_admin_systeme)
+@exiger_admin_systeme
 def basculer_activation_utilisateur(request, pk):
     u = get_object_or_404(Utilisateur, pk=pk)
     u.est_actif_compte = not u.est_actif_compte
@@ -184,8 +196,7 @@ def basculer_activation_utilisateur(request, pk):
     return redirect("comptes:liste_utilisateurs")
 
 
-@login_required
-@user_passes_test(est_admin_systeme)
+@exiger_admin_systeme
 def supprimer_utilisateur(request, pk):
     u = get_object_or_404(Utilisateur, pk=pk)
     if request.method == "POST":
