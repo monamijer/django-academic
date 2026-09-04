@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block titre %}Relevé de notes{% endblock %}
+{% block contenu %}
+<div class="page-head no-print">
+  <div><h1>Relevé de notes</h1></div>
+  <button onclick="window.print()" class="btn btn-brand btn-icon"><i class="bi bi-printer"></i> Imprimer</button>
+</div>
+<div class="text-center d-none d-print-block mb-3"><h2>UNIVPILOT — Relevé de notes officiel</h2></div>
+<div class="panel mb-3" style="padding:1.5rem;">
+  <div class="row">
+    <div class="col-md-6"><strong>Étudiant :</strong> {{ etudiant.utilisateur.get_full_name|default:etudiant.utilisateur.username }}</div>
+    <div class="col-md-6"><strong>Matricule :</strong> {{ etudiant.matricule }}</div>
+    <div class="col-md-6"><strong>Filière :</strong> {{ etudiant.filiere }}</div>
+    <div class="col-md-6"><strong>Promotion :</strong> {{ etudiant.promotion }}</div>
+  </div>
+</div>
+<div class="panel table-panel mb-3">
+  <table class="table mb-0">
+    <thead><tr><th>Cours</th><th>Année académique</th><th>Note / 20</th></tr></thead>
+    <tbody>
+    {% for n in notes %}<tr><td>{{ n.cours }}</td><td>{{ n.annee_academique }}</td><td><strong>{{ n.valeur }}</strong></td></tr>
+    {% empty %}<tr><td colspan="3" class="text-center" style="color:var(--muted); padding:2rem;">Aucune note enregistrée.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="panel" style="padding:1.25rem; display:flex; justify-content:space-between; align-items:center;">
+  <div><strong>Moyenne générale :</strong> {{ moyenne|default:"—" }}{% if moyenne %}/20{% endif %}</div>
+  <div class="tag tag-ok" style="font-size:.9rem;">{{ mention }}</div>
+</div>
+{% endblock %}

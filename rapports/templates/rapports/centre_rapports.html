@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block titre %}Rapports{% endblock %}
+{% block contenu %}
+<div class="page-head"><div><h1>Centre de rapports</h1><div class="subtitle">Documents prêts à imprimer</div></div></div>
+<div class="row g-3">
+  <div class="col-md-4">
+    <div class="panel h-100" style="padding:1.25rem;">
+      <h5><i class="bi bi-people" style="color:var(--ok);"></i> Liste des étudiants</h5>
+      <p style="color:var(--muted); font-size:.88rem;">Étudiants de votre périmètre, groupés par filière.</p>
+      <a href="{% url 'rapports:liste_etudiants_departement' %}" class="btn btn-sm btn-outline-brand btn-icon"><i class="bi bi-file-earmark-text"></i> Générer</a>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="panel h-100" style="padding:1.25rem;">
+      <h5><i class="bi bi-person-badge" style="color:var(--brand-dark);"></i> Liste du personnel</h5>
+      <p style="color:var(--muted); font-size:.88rem;">Personnel de votre périmètre, par rôle.</p>
+      <a href="{% url 'rapports:liste_personnel' %}" class="btn btn-sm btn-outline-brand btn-icon"><i class="bi bi-file-earmark-text"></i> Générer</a>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="panel h-100" style="padding:1.25rem;">
+      <h5><i class="bi bi-mortarboard" style="color:var(--bad);"></i> Relevé de notes</h5>
+      <p style="color:var(--muted); font-size:.88rem;">Depuis la fiche d'un étudiant précis.</p>
+      <a href="{% url 'etudiants:liste_etudiants' %}" class="btn btn-sm btn-outline-brand btn-icon"><i class="bi bi-search"></i> Trouver un étudiant</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block titre %}Performance — {{ cours }}{% endblock %}
+{% block contenu %}
+<div class="page-head no-print">
+  <div><h1>Performance du cours</h1><div class="subtitle">{{ cours.nom }} ({{ cours.code }})</div></div>
+  <button onclick="window.print()" class="btn btn-brand btn-icon"><i class="bi bi-printer"></i> Imprimer</button>
+</div>
+<div class="text-center d-none d-print-block mb-3"><h2>UNIVPILOT — Rapport de performance</h2></div>
+<div class="stat-row mb-4">
+  <div class="stat-card"><span class="icon-circle" style="background:var(--brand);"><i class="bi bi-graph-up"></i></span><div><div class="value">{{ moyenne|default:"—" }}{% if moyenne %}/20{% endif %}</div><div class="label">Moyenne du cours</div></div></div>
+  <div class="stat-card"><span class="icon-circle" style="background:#2E7D4F;"><i class="bi bi-people"></i></span><div><div class="value">{{ notes|length }}</div><div class="label">Notes saisies</div></div></div>
+</div>
+<div class="panel table-panel mb-4">
+  <table class="table mb-0"><thead><tr><th>Tranche</th><th>Nombre d'étudiants</th></tr></thead>
+  <tbody>{% for tranche, nb in tranches.items %}<tr><td>{{ tranche }}/20</td><td>{{ nb }}</td></tr>{% endfor %}</tbody></table>
+</div>
+<div class="panel table-panel">
+  <table class="table mb-0"><thead><tr><th>Étudiant</th><th>Note</th></tr></thead>
+  <tbody>{% for n in notes %}<tr><td>{{ n.etudiant }}</td><td>{{ n.valeur }}/20</td></tr>{% empty %}<tr><td colspan="2" class="text-center" style="color:var(--muted); padding:2rem;">Aucune note.</td></tr>{% endfor %}</tbody></table>
+</div>
+{% endblock %}
