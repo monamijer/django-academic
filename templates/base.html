@@ -37,7 +37,7 @@ h1,h2,h3,h4,h5,h6{font-family:'Fraunces',serif; font-weight:600; letter-spacing:
 .brand-mark .glyph{width:36px; height:36px; border-radius:8px; background:var(--brand); display:flex; align-items:center; justify-content:center; font-size:1.1rem; color:var(--ink);}
 .topbar-user{color:#dbe0ea; display:flex; align-items:center; gap:.75rem; margin-left:auto; white-space:nowrap; font-size:.9rem;}
 .topbar-user .role-pill{background:var(--brand); color:var(--ink); font-weight:700; font-size:.68rem; padding:.15rem .55rem; border-radius:100px; letter-spacing:.02em;}
-.btn-logout{border:1px solid #3d4f75; color:#dbe0ea; background:transparent; border-radius:8px; padding:.35rem .7rem; font-size:.85rem; font-weight:600; text-decoration:none;}
+.btn-logout{border:1px solid #3d4f75; color:#dbe0ea; background:transparent; border-radius:8px; padding:.35rem .7rem; font-size:.85rem; font-weight:600; font-family:inherit; text-decoration:none;}
 .btn-logout:hover{background:#3d4f75; color:#fff;}
 
 .subnav{background:var(--ink-soft); padding:0 1.5rem; display:flex; gap:.25rem; overflow-x:auto;}
@@ -113,7 +113,10 @@ a{color:var(--brand-dark);}
     <span><i class="bi bi-person-circle"></i> {{ user.get_full_name|default:user.username }}</span>
     <span class="role-pill">{{ user.get_role_display|upper }}</span>
     <a href="{% url 'comptes:mon_profil' %}" class="btn-logout"><i class="bi bi-person-gear"></i> Mon profil</a>
-    <a href="{% url 'comptes:deconnexion' %}" class="btn-logout">Déconnexion</a>
+    <form method="post" action="{% url 'comptes:deconnexion' %}" style="display:inline;">
+      {% csrf_token %}
+      <button type="submit" class="btn-logout" style="cursor:pointer;">Déconnexion</button>
+    </form>
   </div>
 </div>
 <div class="subnav no-print">
