@@ -1,12 +1,39 @@
 {% extends "base.html" %}
 {% block titre %}Tableau de bord{% endblock %}
 {% block contenu %}
-<div class="page-head"><div><h1>Vue d'ensemble de l'université</h1><div class="subtitle">{{ role_label }}</div></div></div>
-<div class="stat-row">
-  <div class="stat-card"><span class="icon-circle" style="background:#16233F;"><i class="bi bi-bank"></i></span><div><div class="value">{{ nb_facultes }}</div><div class="label">Facultés actives</div></div></div>
-  <div class="stat-card"><span class="icon-circle" style="background:#A9812F;"><i class="bi bi-diagram-3"></i></span><div><div class="value">{{ nb_departements }}</div><div class="label">Départements actifs</div></div></div>
-  <div class="stat-card"><span class="icon-circle" style="background:#2E7D4F;"><i class="bi bi-people"></i></span><div><div class="value">{{ nb_etudiants }}</div><div class="label">Étudiants actifs</div></div></div>
-  <div class="stat-card"><span class="icon-circle" style="background:#A6332B;"><i class="bi bi-person-badge"></i></span><div><div class="value">{{ nb_personnel }}</div><div class="label">Membres du personnel</div></div></div>
+<div class="hero-banner">
+  <h1>Vue d'ensemble de l'université</h1>
+  <div class="subtitle">{{ role_label }} — {{ user.get_full_name|default:user.username }}</div>
+  <div class="hero-meta">
+    <div class="item"><strong>{{ nb_facultes }}</strong>Facultés</div>
+    <div class="item"><strong>{{ nb_departements }}</strong>Départements</div>
+    <div class="item"><strong>{{ nb_etudiants }}</strong>Étudiants</div>
+    <div class="item"><strong>{{ nb_personnel }}</strong>Personnel</div>
+  </div>
 </div>
-<p class="mt-4" style="color:var(--muted);">Utilisez les onglets ci-dessus pour consulter les facultés, départements, cours, étudiants et rapports de l'ensemble de l'université.</p>
+
+<h6 style="color:var(--muted); text-transform:uppercase; font-size:.75rem; letter-spacing:.05em; margin-bottom:.75rem; font-family:'Work Sans',sans-serif;">Accès rapide</h6>
+<div class="quick-tile-grid mb-4">
+  <a href="{% url 'academique:liste_facultes' %}" class="quick-tile"><span class="tile-icon" style="background:#16233F;"><i class="bi bi-bank"></i></span><span class="tile-label">Facultés</span><span class="tile-sub">Structure</span></a>
+  <a href="{% url 'academique:liste_departements' %}" class="quick-tile"><span class="tile-icon" style="background:#A9812F;"><i class="bi bi-diagram-3"></i></span><span class="tile-label">Départements</span><span class="tile-sub">Organisation</span></a>
+  <a href="{% url 'academique:liste_cours' %}" class="quick-tile"><span class="tile-icon" style="background:#2E7D4F;"><i class="bi bi-journal-bookmark"></i></span><span class="tile-label">Cours</span><span class="tile-sub">Offre académique</span></a>
+  <a href="{% url 'etudiants:liste_etudiants' %}" class="quick-tile"><span class="tile-icon" style="background:#A6332B;"><i class="bi bi-people"></i></span><span class="tile-label">Étudiants</span><span class="tile-sub">Dossiers</span></a>
+  <a href="{% url 'comptes:liste_utilisateurs' %}" class="quick-tile"><span class="tile-icon" style="background:#5B4B8A;"><i class="bi bi-person-badge"></i></span><span class="tile-label">Comptes</span><span class="tile-sub">Personnel</span></a>
+  <a href="{% url 'rapports:centre_rapports' %}" class="quick-tile"><span class="tile-icon" style="background:#0d6efd;"><i class="bi bi-printer"></i></span><span class="tile-label">Rapports</span><span class="tile-sub">Impressions</span></a>
+</div>
+
+<div class="panel">
+  <div class="panel-head"><i class="bi bi-clock-history"></i> Activité récente</div>
+  <div>
+    {% for a in activites_recentes %}
+    <div class="feed-row">
+      <span class="feed-icon" style="background:var(--brand);"><i class="bi bi-dot"></i></span>
+      <div class="feed-main">
+        <div class="feed-title">{{ a.get_action_display }} — {{ a.type_objet }}{% if a.objet_repr %} · {{ a.objet_repr }}{% endif %}</div>
+        <div class="feed-sub">{{ a.utilisateur|default:"Système" }} · {{ a.horodatage|date:"d/m/Y H:i" }}</div>
+      </div>
+    </div>
+    {% empty %}<div class="empty-state"><i class="bi bi-inbox"></i>Aucune activité récente.</div>{% endfor %}
+  </div>
+</div>
 {% endblock %}

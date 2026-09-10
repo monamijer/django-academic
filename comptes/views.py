@@ -55,6 +55,7 @@ def tableau_bord(request):
             "nb_departements": Departement.objects.filter(est_actif=True).count(),
             "nb_etudiants": Etudiant.objects.filter(est_actif=True).count(),
             "nb_personnel": Utilisateur.objects.exclude(role=Utilisateur.Role.ETUDIANT).count(),
+            "activites_recentes": JournalActivite.objects.select_related("utilisateur")[:6],
         })
         template = "comptes/tableau_bord_direction.html"
 
@@ -62,6 +63,7 @@ def tableau_bord(request):
         departements = u.departements_geres()
         contexte.update({
             "faculte": u.faculte,
+            "departements_liste": departements,
             "nb_departements": departements.count(),
             "nb_etudiants": Etudiant.objects.filter(filiere__departement__in=departements, est_actif=True).count(),
             "nb_cours": Cours.objects.filter(departement__in=departements, est_actif=True).count(),
@@ -89,9 +91,11 @@ def tableau_bord(request):
 
     elif u.role == Utilisateur.Role.SECRETAIRE:
         departements = u.departements_geres()
+        etudiants_dept = Etudiant.objects.filter(filiere__departement__in=departements)
         contexte.update({
             "departement": u.departement,
-            "nb_etudiants": Etudiant.objects.filter(filiere__departement__in=departements).count(),
+            "nb_etudiants": etudiants_dept.count(),
+            "derniers_etudiants": etudiants_dept.select_related("utilisateur", "filiere").order_by("-pk")[:6],
         })
         template = "comptes/tableau_bord_secretaire.html"
 

@@ -18,6 +18,25 @@ def centre_rapports(request):
 
 
 @login_required
+def mon_releve(request):
+    """Un étudiant imprime son propre relevé — indépendant du filtrage par
+    périmètre de gestion, qui ne le couvre pas puisqu'il gère seulement ses
+    propres données, pas celles d'un département."""
+    etudiant = getattr(request.user, "fiche_etudiant", None)
+    if etudiant is None:
+        from django.contrib import messages
+        from django.shortcuts import redirect
+        messages.error(request, "Aucune fiche étudiant associée à ce compte.")
+        return redirect("comptes:tableau_bord")
+    notes = etudiant.notes.select_related("cours", "annee_academique")
+    enregistrer_activite(request.user, "IMPRESSION", "Rapport", details="Mon relevé de notes")
+    return render(request, "rapports/releve_notes.html", {
+        "etudiant": etudiant, "notes": notes,
+        "moyenne": etudiant.moyenne_generale(), "mention": etudiant.mention(),
+    })
+
+
+@login_required
 def releve_notes(request, pk):
     """Relevé de notes imprimable d'un étudiant, avec calcul de moyenne."""
     etudiant = get_object_or_404(_etudiants_visibles(request.user), pk=pk)

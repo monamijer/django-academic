@@ -1,11 +1,22 @@
 {% extends "base.html" %}
 {% block titre %}Tableau de bord{% endblock %}
 {% block contenu %}
-<div class="page-head"><div><h1>Mes cours</h1><div class="subtitle">{{ role_label }}</div></div></div>
-<div class="stat-row mb-4">
-  <div class="stat-card"><span class="icon-circle" style="background:#A9812F;"><i class="bi bi-journal-bookmark"></i></span><div><div class="value">{{ cours.count }}</div><div class="label">Cours enseignés</div></div></div>
-  <div class="stat-card"><span class="icon-circle" style="background:#2E7D4F;"><i class="bi bi-people"></i></span><div><div class="value">{{ nb_etudiants }}</div><div class="label">Étudiants inscrits</div></div></div>
+<div class="hero-banner">
+  <h1>Bonjour {{ user.first_name|default:user.username }}</h1>
+  <div class="subtitle">{{ role_label }}</div>
+  <div class="hero-meta">
+    <div class="item"><strong>{{ cours.count }}</strong>Cours enseignés</div>
+    <div class="item"><strong>{{ nb_etudiants }}</strong>Étudiants inscrits</div>
+  </div>
 </div>
+
+<h6 style="color:var(--muted); text-transform:uppercase; font-size:.75rem; letter-spacing:.05em; margin-bottom:.75rem; font-family:'Work Sans',sans-serif;">Accès rapide</h6>
+<div class="quick-tile-grid mb-4">
+  <a href="{% url 'etudiants:mes_cours' %}" class="quick-tile"><span class="tile-icon" style="background:#2E7D4F;"><i class="bi bi-journal-bookmark"></i></span><span class="tile-label">Mes cours</span><span class="tile-sub">Enseignement</span></a>
+  <a href="{% url 'rapports:centre_rapports' %}" class="quick-tile"><span class="tile-icon" style="background:#0d6efd;"><i class="bi bi-printer"></i></span><span class="tile-label">Rapports</span><span class="tile-sub">Impressions</span></a>
+</div>
+
+<h6 style="color:var(--muted); text-transform:uppercase; font-size:.75rem; letter-spacing:.05em; margin-bottom:.75rem; font-family:'Work Sans',sans-serif;">Mes cours</h6>
 <div class="person-grid">
   {% for c in cours %}
   <a href="{% url 'etudiants:notes_cours' c.pk %}" class="person-card">
@@ -17,6 +28,6 @@
       <span class="tag tag-muted">{{ c.inscriptions.count }} inscrit{{ c.inscriptions.count|pluralize }}</span>
     </div>
   </a>
-  {% empty %}<div class="panel" style="grid-column:1/-1; padding:2rem; text-align:center; color:var(--muted);">Aucun cours assigné.</div>{% endfor %}
+  {% empty %}<div class="panel" style="grid-column:1/-1;"><div class="empty-state"><i class="bi bi-journal-x"></i>Aucun cours assigné.</div></div>{% endfor %}
 </div>
 {% endblock %}
