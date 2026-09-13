@@ -1,13 +1,19 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.models import Group
 
 from .models import Utilisateur
 
 
-class ConnexionForm(forms.Form):
-    username = forms.CharField(label="Nom d'utilisateur", widget=forms.TextInput(attrs={"class": "form-control", "autofocus": True}))
-    password = forms.CharField(label="Mot de passe", widget=forms.PasswordInput(attrs={"class": "form-control"}))
+class ConnexionForm(AuthenticationForm):
+    username = forms.CharField(
+        label="Nom d'utilisateur",
+        widget=forms.TextInput(attrs={"class": "form-control", "autofocus": True}),
+    )
+    password = forms.CharField(
+        label="Mot de passe",
+        widget=forms.PasswordInput(attrs={"class": "form-control"}),
+    )
 
 
 class UtilisateurForm(forms.ModelForm):
