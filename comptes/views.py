@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import ListView
 
-from .forms import ConnexionForm, UtilisateurCreationForm, UtilisateurForm
+from .forms import ConnexionForm, UtilisateurCreationForm, UtilisateurForm  # noqa: F401
 from .models import JournalActivite, Utilisateur, enregistrer_activite
 
 
@@ -16,12 +16,8 @@ def est_admin(user):
 
 class ConnexionView(auth_views.LoginView):
     template_name = "comptes/connexion.html"
-    authentication_form = None
+    authentication_form = ConnexionForm
     redirect_authenticated_user = True
-
-    def get_form_class(self):
-        from django.contrib.auth.forms import AuthenticationForm
-        return AuthenticationForm
 
 
 class DeconnexionView(auth_views.LogoutView):
