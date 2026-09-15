@@ -1,28 +1,26 @@
 {% extends "base.html" %}
 {% block titre %}Historique des activités{% endblock %}
 {% block contenu %}
-<h3><i class="bi bi-clock-history"></i> Historique des activités</h3>
-<form method="get" class="row g-2 mb-3 no-print">
-  <div class="col-auto"><input type="text" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Filtrer..."></div>
-  <div class="col-auto"><button class="btn btn-outline-secondary btn-icon"><i class="bi bi-search"></i> Filtrer</button></div>
+<div class="page-head"><div><h1>Historique des activités</h1><div class="subtitle">Qui a fait quoi, et quand</div></div></div>
+<form method="get" class="filter-bar no-print">
+  <input type="text" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Filtrer...">
+  <button class="btn btn-outline-brand btn-icon"><i class="bi bi-search"></i> Filtrer</button>
 </form>
-<div class="card section-utilisateurs">
-  <div class="table-responsive">
-    <table class="table table-sm table-hover mb-0">
-      <thead class="table-light"><tr><th>Date</th><th>Utilisateur</th><th>Action</th><th>Objet concerné</th><th>Détails</th></tr></thead>
-      <tbody>
-        {% for a in activites %}
-        <tr>
-          <td>{{ a.horodatage|date:"d/m/Y H:i" }}</td>
-          <td>{{ a.utilisateur|default:"—" }}</td>
-          <td><span class="badge bg-info text-dark">{{ a.get_action_display }}</span></td>
-          <td>{{ a.type_objet }} {% if a.objet_repr %}— {{ a.objet_repr }}{% endif %}</td>
-          <td class="text-muted small">{{ a.details }}</td>
-        </tr>
-        {% empty %}<tr><td colspan="5" class="text-center text-muted py-4">Aucune activité enregistrée.</td></tr>{% endfor %}
-      </tbody>
-    </table>
-  </div>
+<div class="panel table-panel">
+  <table class="table table-sm mb-0">
+    <thead><tr><th>Date</th><th>Utilisateur</th><th>Action</th><th>Objet concerné</th><th>Détails</th></tr></thead>
+    <tbody>
+      {% for a in activites %}
+      <tr>
+        <td style="color:var(--muted);">{{ a.horodatage|date:"d/m/Y H:i" }}</td>
+        <td style="font-weight:600;">{{ a.utilisateur|default:"—" }}</td>
+        <td><span class="tag tag-muted">{{ a.get_action_display }}</span></td>
+        <td>{{ a.type_objet }} {% if a.objet_repr %}— {{ a.objet_repr }}{% endif %}</td>
+        <td style="color:var(--muted); font-size:.85rem;">{{ a.details }}</td>
+      </tr>
+      {% empty %}<tr><td colspan="5" class="text-center" style="color:var(--muted); padding:2rem;">Aucune activité enregistrée.</td></tr>{% endfor %}
+    </tbody>
+  </table>
 </div>
 {% include "pagination.html" with page_obj=page_obj %}
 {% endblock %}
