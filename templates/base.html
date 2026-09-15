@@ -6,61 +6,224 @@
 <title>{% block titre %}GESTOCK{% endblock %} — Gestion de stock</title>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --c-utilisateurs:#6f42c1;   /* violet = comptes / utilisateurs */
-    --c-produits:#0d6efd;       /* bleu = produits / stock */
-    --c-mouvements:#198754;     /* vert = mouvements (entrées/sorties) */
-    --c-rapports:#fd7e14;       /* orange = rapports */
-    --c-alerte:#dc3545;         /* rouge = alertes / suppression */
-  }
-  body{background:#f4f6f9;}
-  .navbar-brand i{color:#ffc107;}
-  .section-utilisateurs{border-left:5px solid var(--c-utilisateurs);}
-  .section-produits{border-left:5px solid var(--c-produits);}
-  .section-mouvements{border-left:5px solid var(--c-mouvements);}
-  .section-rapports{border-left:5px solid var(--c-rapports);}
-  .card{border-radius:.75rem;}
-  .btn-icon{display:inline-flex;align-items:center;gap:.4rem;}
-  .badge-couleur{width:.9rem;height:.9rem;border-radius:50%;display:inline-block;}
-  .nav-link.active{font-weight:600;}
-  @media print{
-    .no-print{display:none !important;}
-    body{background:#fff;}
-    .card{border:1px solid #ccc;}
-  }
+:root{
+  --ink:#101B2D;          /* fond des barres, texte fort */
+  --ink-soft:#2A3A50;     /* sous-barre */
+  --paper:#EEF1F4;        /* fond de page */
+  --card:#FFFFFF;
+  --line:#DDE3E9;
+  --text:#1B2733;
+  --muted:#5B6B79;
+  --brand:#C56A1A;        /* accent cuivre/ambre — CTA, liens actifs */
+  --brand-dark:#9E5313;
+  --ok:#1F7A4D;
+  --ok-bg:#E6F4EC;
+  --warn:#B4790A;
+  --warn-bg:#FBF0DC;
+  --bad:#B3261E;
+  --bad-bg:#FBE7E5;
+  --violet:#5B4B8A;
+  --radius:10px;
+}
+*{box-sizing:border-box;}
+body{
+  background:var(--paper);
+  color:var(--text);
+  font-family:'Manrope',system-ui,-apple-system,sans-serif;
+  font-weight:500;
+}
+h1,h2,h3,h4,h5,h6{font-weight:800; letter-spacing:-.01em; color:var(--ink);}
+.mono{font-family:'JetBrains Mono',monospace;}
+
+/* ---- Barre supérieure ---- */
+.topbar{
+  background:var(--ink);
+  padding:.65rem 1.5rem;
+  display:flex; align-items:center; gap:1.25rem;
+}
+.brand-mark{
+  display:flex; align-items:center; gap:.55rem;
+  color:#fff; text-decoration:none; font-weight:800; font-size:1.15rem;
+  white-space:nowrap;
+}
+.brand-mark .glyph{
+  width:34px; height:34px; border-radius:8px;
+  background:var(--brand);
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.05rem;
+}
+.topbar-search{flex:1; max-width:640px;}
+.topbar-search input{
+  border:none; border-radius:8px; padding:.5rem .9rem;
+  width:100%; background:#fff;
+}
+.topbar-search input:focus{outline:2px solid var(--brand); outline-offset:1px;}
+.topbar-user{
+  color:#dfe6ee; display:flex; align-items:center; gap:.75rem; white-space:nowrap; font-size:.92rem;
+}
+.topbar-user .role-pill{
+  background:var(--brand); color:#fff; font-weight:700; font-size:.7rem;
+  padding:.15rem .5rem; border-radius:100px; letter-spacing:.02em;
+}
+.btn-logout{
+  border:1px solid #3d4f68; color:#dfe6ee; background:transparent;
+  border-radius:8px; padding:.35rem .7rem; font-size:.85rem; font-weight:600;
+  text-decoration:none; transition:.15s;
+}
+.btn-logout:hover{background:#3d4f68; color:#fff;}
+
+/* ---- Sous-navigation ---- */
+.subnav{
+  background:var(--ink-soft);
+  padding:0 1.5rem;
+  display:flex; gap:.25rem; overflow-x:auto;
+}
+.subnav a{
+  color:#c4cedb; text-decoration:none; font-weight:600; font-size:.88rem;
+  padding:.65rem .9rem; display:flex; align-items:center; gap:.45rem;
+  border-bottom:3px solid transparent; white-space:nowrap;
+}
+.subnav a:hover{color:#fff;}
+.subnav a.active{color:#fff; border-bottom-color:var(--brand);}
+
+/* ---- Structure générale ---- */
+.page{padding:1.75rem;}
+.page-head{display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; margin-bottom:1.25rem; flex-wrap:wrap;}
+.page-head h1{font-size:1.5rem; margin:0;}
+.page-head .subtitle{color:var(--muted); font-size:.9rem; font-weight:500; margin-top:.15rem;}
+
+/* ---- Boutons ---- */
+.btn{border-radius:8px; font-weight:700; font-size:.88rem;}
+.btn-brand{background:var(--brand); border-color:var(--brand); color:#fff;}
+.btn-brand:hover{background:var(--brand-dark); border-color:var(--brand-dark); color:#fff;}
+.btn-outline-brand{border:1.5px solid var(--brand); color:var(--brand-dark); background:#fff;}
+.btn-outline-brand:hover{background:var(--brand); color:#fff;}
+.btn-icon{display:inline-flex; align-items:center; gap:.4rem;}
+.icon-btn{
+  width:34px; height:34px; border-radius:8px; display:inline-flex;
+  align-items:center; justify-content:center; border:1px solid var(--line);
+  color:var(--muted); background:#fff; text-decoration:none; transition:.15s;
+}
+.icon-btn:hover{border-color:var(--brand); color:var(--brand-dark);}
+.icon-btn.danger:hover{border-color:var(--bad); color:var(--bad); background:var(--bad-bg);}
+
+/* ---- Cartes ---- */
+.panel{background:var(--card); border:1px solid var(--line); border-radius:var(--radius);}
+.panel-head{padding:1rem 1.25rem; border-bottom:1px solid var(--line); font-weight:700; color:var(--ink); display:flex; align-items:center; gap:.5rem;}
+
+/* ---- Cartes statistiques ---- */
+.stat-row{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:1rem;}
+.stat-card{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+  padding:1.1rem 1.25rem; display:flex; align-items:center; gap:.9rem;
+}
+.stat-card .icon-circle{
+  width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:1.2rem; flex-shrink:0; color:#fff;
+}
+.stat-card .value{font-size:1.6rem; font-weight:800; color:var(--ink); line-height:1;}
+.stat-card .label{color:var(--muted); font-size:.82rem; font-weight:600;}
+
+/* ---- Grille produits (catalogue) ---- */
+.product-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:1rem;}
+.product-card{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+  overflow:hidden; display:flex; flex-direction:column; text-decoration:none; color:inherit;
+  transition:.15s;
+}
+.product-card:hover{border-color:var(--brand); box-shadow:0 4px 14px rgba(16,27,45,.08);}
+.product-card .swatch{
+  height:8px; width:100%;
+}
+.product-card .body{padding:1rem 1.1rem; flex:1; display:flex; flex-direction:column; gap:.4rem;}
+.product-card .cat-tag{font-size:.72rem; font-weight:700; text-transform:none; color:var(--muted);}
+.product-card .name{font-weight:800; color:var(--ink); font-size:1.02rem; line-height:1.25;}
+.product-card .ref{font-family:'JetBrains Mono',monospace; font-size:.74rem; color:var(--muted);}
+.product-card .stock-line{display:flex; align-items:baseline; gap:.3rem; margin-top:.2rem;}
+.product-card .stock-line .qty{font-size:1.35rem; font-weight:800; color:var(--ink);}
+.product-card .stock-line .unit{font-size:.78rem; color:var(--muted); font-weight:600;}
+.product-card .price{color:var(--brand-dark); font-weight:800; font-size:1rem;}
+.product-card .tags{display:flex; gap:.35rem; flex-wrap:wrap; margin-top:.15rem;}
+.product-card .footer-actions{
+  border-top:1px solid var(--line); padding:.6rem .9rem; display:flex; gap:.4rem; justify-content:flex-end;
+  background:#FAFBFC;
+}
+
+/* ---- Badges / pastilles ---- */
+.tag{font-size:.7rem; font-weight:700; padding:.2rem .55rem; border-radius:100px; display:inline-flex; align-items:center; gap:.3rem;}
+.tag-ok{background:var(--ok-bg); color:var(--ok);}
+.tag-warn{background:var(--warn-bg); color:var(--warn);}
+.tag-bad{background:var(--bad-bg); color:var(--bad);}
+.tag-muted{background:#EDF0F3; color:var(--muted);}
+.dot{width:.6rem; height:.6rem; border-radius:50%; display:inline-block;}
+
+/* ---- Tableaux (vues denses : mouvements, utilisateurs, historique) ---- */
+.table-panel table{margin:0;}
+.table-panel thead th{
+  background:#F7F8FA; color:var(--muted); font-size:.72rem; font-weight:700;
+  text-transform:uppercase; letter-spacing:.04em; border-bottom:1px solid var(--line); padding:.7rem 1rem;
+}
+.table-panel tbody td{padding:.7rem 1rem; border-bottom:1px solid var(--line); vertical-align:middle; font-size:.9rem;}
+.table-panel tbody tr:last-child td{border-bottom:none;}
+.table-panel tbody tr:hover{background:#FAFBFC;}
+
+/* ---- Formulaires ---- */
+.form-control, .form-select{border-radius:8px; border-color:var(--line);}
+.form-control:focus, .form-select:focus{border-color:var(--brand); box-shadow:0 0 0 .2rem rgba(197,106,26,.15);}
+.form-label{font-weight:700; font-size:.85rem; color:var(--ink);}
+
+/* ---- Filtres ---- */
+.filter-bar{display:flex; gap:.6rem; flex-wrap:wrap; margin-bottom:1.1rem;}
+.filter-bar .form-control, .filter-bar .form-select{max-width:260px;}
+
+a{color:var(--brand-dark);}
+::selection{background:var(--brand); color:#fff;}
+
+@media print{
+  .no-print{display:none !important;}
+  body{background:#fff;}
+  .panel{border:1px solid #ccc;}
+}
+@media (max-width:768px){
+  .topbar{flex-wrap:wrap;}
+  .topbar-search{order:3; max-width:none; flex-basis:100%;}
+}
 </style>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark no-print" style="background:#1e2a3a;">
-  <div class="container-fluid">
-    <a class="navbar-brand fw-bold" href="{% url 'stock:tableau_bord' %}"><i class="bi bi-boxes"></i> GESTOCK</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav1"><span class="navbar-toggler-icon"></span></button>
-    <div class="collapse navbar-collapse" id="nav1">
-      {% if user.is_authenticated %}
-      <ul class="navbar-nav me-auto">
-        <li class="nav-item"><a class="nav-link" href="{% url 'stock:tableau_bord' %}"><i class="bi bi-speedometer2"></i> Tableau de bord</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'stock:liste_produits' %}"><i class="bi bi-box-seam"></i> Produits</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'stock:liste_categories' %}"><i class="bi bi-tags"></i> Catégories</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'stock:liste_mouvements' %}"><i class="bi bi-arrow-left-right"></i> Mouvements</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'rapports:centre_rapports' %}"><i class="bi bi-printer"></i> Rapports</a></li>
-        {% if user.est_administrateur or user.is_superuser %}
-        <li class="nav-item"><a class="nav-link" href="{% url 'comptes:liste_utilisateurs' %}"><i class="bi bi-people"></i> Utilisateurs</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'comptes:historique' %}"><i class="bi bi-clock-history"></i> Historique</a></li>
-        {% endif %}
-      </ul>
-      <span class="navbar-text text-light me-3"><i class="bi bi-person-circle"></i> {{ user.get_full_name|default:user.username }}
-        {% if user.est_administrateur %}<span class="badge bg-warning text-dark">Admin</span>{% endif %}
-      </span>
-      <a href="{% url 'comptes:deconnexion' %}" class="btn btn-outline-light btn-sm btn-icon"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
-      {% endif %}
-    </div>
+{% if user.is_authenticated %}
+<div class="topbar no-print">
+  <a href="{% url 'stock:tableau_bord' %}" class="brand-mark">
+    <span class="glyph"><i class="bi bi-boxes"></i></span> GESTOCK
+  </a>
+  <form class="topbar-search" method="get" action="{% url 'stock:liste_produits' %}">
+    <input type="text" name="q" placeholder="Rechercher un produit, une référence...">
+  </form>
+  <div class="topbar-user">
+    <span><i class="bi bi-person-circle"></i> {{ user.get_full_name|default:user.username }}</span>
+    {% if user.est_administrateur %}<span class="role-pill">ADMIN</span>{% endif %}
+    <a href="{% url 'comptes:deconnexion' %}" class="btn-logout">Déconnexion</a>
   </div>
-</nav>
+</div>
+<div class="subnav no-print">
+  <a href="{% url 'stock:tableau_bord' %}" class="{% if request.resolver_match.url_name == 'tableau_bord' %}active{% endif %}"><i class="bi bi-speedometer2"></i> Tableau de bord</a>
+  <a href="{% url 'stock:liste_produits' %}" class="{% if 'produits' in request.path %}active{% endif %}"><i class="bi bi-box-seam"></i> Produits</a>
+  <a href="{% url 'stock:liste_categories' %}" class="{% if 'categories' in request.path %}active{% endif %}"><i class="bi bi-tags"></i> Catégories</a>
+  <a href="{% url 'stock:liste_mouvements' %}" class="{% if 'mouvements' in request.path %}active{% endif %}"><i class="bi bi-arrow-left-right"></i> Mouvements</a>
+  <a href="{% url 'rapports:centre_rapports' %}" class="{% if '/rapports/' in request.path %}active{% endif %}"><i class="bi bi-printer"></i> Rapports</a>
+  {% if user.est_administrateur or user.is_superuser %}
+  <a href="{% url 'comptes:liste_utilisateurs' %}" class="{% if 'utilisateurs' in request.path %}active{% endif %}"><i class="bi bi-people"></i> Utilisateurs</a>
+  <a href="{% url 'comptes:historique' %}" class="{% if 'historique' in request.path %}active{% endif %}"><i class="bi bi-clock-history"></i> Historique</a>
+  {% endif %}
+</div>
+{% endif %}
 
-<div class="container-fluid py-4 px-4">
+<div class="page">
   {% for message in messages %}
-    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show no-print" role="alert">
+    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show no-print" role="alert" style="border-radius:8px;">
       {{ message }}
       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
