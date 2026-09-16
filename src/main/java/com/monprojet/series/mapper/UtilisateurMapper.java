@@ -17,6 +17,14 @@ public final class UtilisateurMapper {
     }
 
     public static UtilisateurResponse toResponse(Utilisateur utilisateur) {
-        return new UtilisateurResponse(utilisateur.getId(), utilisateur.getPseudo(), utilisateur.getEmail());
+        return new UtilisateurResponse(
+                utilisateur.getId(),
+                utilisateur.getPseudo(),
+                utilisateur.getEmail(),
+                utilisateur.getRole().name(),
+                utilisateur.getStatut().name(),
+                utilisateur.getDateInscription(),
+                utilisateur.getDerniereConnexion()
+        );
     }
 }

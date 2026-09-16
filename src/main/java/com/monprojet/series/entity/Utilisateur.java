@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,8 +39,19 @@ public class Utilisateur {
     @Builder.Default
     private RoleUtilisateur role = RoleUtilisateur.USER;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private StatutUtilisateur statut = StatutUtilisateur.EN_ATTENTE;
+
+    @Column(name = "date_inscription", nullable = false)
+    @Builder.Default
+    private LocalDateTime dateInscription = LocalDateTime.now();
+
+    @Column(name = "derniere_connexion")
+    private LocalDateTime derniereConnexion;
+
     @Builder.Default
     @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Visionnage> visionnages = new ArrayList<>();
-
 }
