@@ -481,3 +481,65 @@ main { padding: var(--espace); max-width: 900px; margin: 0 auto; }
   margin: 0.5rem 0;
   font-weight: 600;
 }
+
+/* ===== Watch providers ===== */
+
+.bloc-fournisseurs {
+  margin: 1rem 0 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.bloc-fournisseurs h3 {
+  font-size: 1rem;
+  color: var(--couleur-primaire);
+  margin-bottom: 0.6rem;
+}
+
+.fournisseurs-liste {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.fournisseur {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.5rem;
+  border-radius: var(--rayon);
+  background: #f8f8f8;
+  text-decoration: none;
+  color: var(--couleur-texte);
+  min-width: 80px;
+  transition: background 0.15s;
+}
+.fournisseur:hover { background: #eef2ff; }
+
+.fournisseur img {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: white;
+}
+
+.fournisseur-nom {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.fournisseur-type {
+  font-size: 0.7rem;
+  color: #777;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.fournisseurs-source {
+  font-size: 0.75rem;
+  color: #999;
+  margin-top: 0.6rem;
+}
+.fournisseurs-source a { color: var(--couleur-primaire); }

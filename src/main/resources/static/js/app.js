@@ -381,6 +381,57 @@ document.getElementById("panneau-detail").addEventListener("click", (e) => {
   if (e.target.id === "panneau-detail") fermerModale();
 });
 
+async function chargerFournisseurs(serie, tmdbId) {
+  const conteneur = document.getElementById("fournisseurs-detail");
+  if (!conteneur) return;
+
+  // Si la série n'a pas de tmdbId (créée manuellement), on affiche un message
+  if (!tmdbId) {
+    conteneur.innerHTML = messageVide(
+      "Aucune plateforme connue pour cette série (ajoutée manuellement)."
+    );
+    return;
+  }
+
+  conteneur.innerHTML = messageChargement("Recherche des plateformes...");
+
+  let parPays;
+  try {
+    parPays = await appelApi(`${API}/tmdb/serie/${tmdbId}/fournisseurs`);
+  } catch (err) {
+    conteneur.innerHTML = messageErreur(err.message);
+    return;
+  }
+
+  // Priorité au pays FR, sinon premier pays dispo
+  const pays = parPays.FR ? "FR" : Object.keys(parPays)[0];
+  const fournisseurs = pays ? parPays[pays] : null;
+
+  if (!fournisseurs || fournisseurs.length === 0) {
+    conteneur.innerHTML = messageVide(
+      "Aucune plateforme de streaming référencée pour cette série."
+    );
+    return;
+  }
+
+  const libelles = { FLATRATE: "Abonnement", RENT: "Location", BUY: "Achat" };
+
+  conteneur.innerHTML = `
+    <div class="fournisseurs-liste">
+      ${fournisseurs.map((f) => `
+        <a class="fournisseur" href="${f.lien}" target="_blank" rel="noopener noreferrer"
+           title="${f.nom} — ${libelles[f.type] || f.type}">
+          ${f.logoUrl
+            ? `<img src="${f.logoUrl}" alt="${f.nom}">`
+            : `<span class="fournisseur-nom">${f.nom}</span>`}
+          <span class="fournisseur-type">${libelles[f.type] || f.type}</span>
+        </a>
+      `).join("")}
+    </div>
+    <p class="fournisseurs-source">Données TMDB · <a href="https://www.themoviedb.org" target="_blank" rel="noopener">themoviedb.org</a></p>
+  `;
+}
+
 async function ouvrirDetailSerie(serie) {
   const contenu = document.getElementById("detail-contenu");
   contenu.innerHTML = `<h2 id="titre-detail">${serie.titre}</h2>` + messageChargement();
@@ -400,7 +451,11 @@ async function ouvrirDetailSerie(serie) {
     return;
   }
 
-  let html = `<h2 id="titre-detail">${serie.titre}</h2>`;
+    let html = `<h2 id="titre-detail">${serie.titre}</h2>
+    <section class="bloc-fournisseurs">
+      <h3>Où regarder ?</h3>
+      <div id="fournisseurs-detail" aria-live="polite"></div>
+    </section>`;
   for (const saison of saisons) {
     let episodes = [];
     try {
@@ -424,6 +479,8 @@ async function ouvrirDetailSerie(serie) {
   }
   contenu.innerHTML = html;
 
+   chargerFournisseurs(serie, serie.tmdbId);
+   
   contenu.querySelectorAll(".check-vu").forEach((checkbox) => {
     checkbox.addEventListener("change", async (e) => {
       const episodeId = e.target.dataset.episodeId;
