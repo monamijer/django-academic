@@ -4,6 +4,7 @@ package com.monprojet.series.controller;
 import com.monprojet.series.dto.response.*;
 import com.monprojet.series.service.TmdbService;
 import lombok.RequiredArgsConstructor;
+import java.util.Map;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -99,5 +100,10 @@ public class TmdbController {
     @GetMapping("/acteur/{acteurId}/series")
     public List<TmdbSerieResponse> seriesActeur(@PathVariable Long acteurId) {
         return tmdbService.listerSeriesActeur(acteurId);
+    }
+
+    @GetMapping("/serie/{tmdbId}/fournisseurs")
+    public Map<String, List<FournisseurResponse>> fournisseurs(@PathVariable Long tmdbId) {
+        return tmdbService.listerFournisseurs(tmdbId);
     }
 }
