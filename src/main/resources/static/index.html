@@ -36,7 +36,7 @@
         <button type="submit">Se connecter</button>
       </form>
 
-      <form id="form-inscription" class="form-auth auth-panel" hidden
+            <form id="form-inscription" class="form-auth auth-panel" hidden
             role="tabpanel" aria-labelledby="tab-inscription">
         <label for="inscription-pseudo">Pseudo</label>
         <input id="inscription-pseudo" type="text" required autocomplete="nickname">
@@ -47,10 +47,14 @@
         <label for="inscription-motdepasse">Mot de passe (min. 8 caractères)</label>
         <input id="inscription-motdepasse" type="password" required minlength="8" autocomplete="new-password">
 
+        <label for="inscription-motdepasse-confirmation">Confirmer le mot de passe</label>
+        <input id="inscription-motdepasse-confirmation" type="password" required minlength="8" autocomplete="new-password">
+
         <button type="submit">S'inscrire</button>
       </form>
 
       <p id="login-erreur" class="erreur" role="alert" aria-live="assertive"></p>
+      <p id="login-succes" class="succes hidden" role="status" aria-live="polite"></p>
     </div>
   </div>
 

@@ -39,14 +39,23 @@ function deconnexion() {
 
 document.querySelectorAll(".auth-tab").forEach((btn) => {
   btn.addEventListener("click", () => {
+    // 1. Désactive tous les onglets
     document.querySelectorAll(".auth-tab").forEach((b) => {
       b.classList.remove("active");
       b.setAttribute("aria-selected", "false");
     });
-    document.querySelectorAll(".auth-panel").forEach((p) => p.setAttribute("hidden", ""));
+    // 2. Cache tous les panels (via classe + attribut, ceinture + bretelles)
+    document.querySelectorAll(".auth-panel").forEach((p) => {
+      p.classList.remove("active");
+      p.setAttribute("hidden", "");
+    });
+    // 3. Active le bon
     btn.classList.add("active");
     btn.setAttribute("aria-selected", "true");
-    document.getElementById(`form-${btn.dataset.auth}`).removeAttribute("hidden");
+    const panel = document.getElementById(`form-${btn.dataset.auth}`);
+    panel.classList.add("active");
+    panel.removeAttribute("hidden");
+    // 4. Reset du message d'erreur
     document.getElementById("login-erreur").textContent = "";
   });
 });
@@ -130,15 +139,45 @@ document.getElementById("form-inscription").addEventListener("submit", async (e)
   const pseudo = document.getElementById("inscription-pseudo").value;
   const email = document.getElementById("inscription-email").value;
   const motDePasse = document.getElementById("inscription-motdepasse").value;
+  const confirmation = document.getElementById("inscription-motdepasse-confirmation").value;
+
+  const erreurEl = document.getElementById("login-erreur");
+  const succesEl = document.getElementById("login-succes");
+  erreurEl.textContent = "";
+  succesEl.classList.add("hidden");
+  succesEl.textContent = "";
+
+  // Vérification côté client
+  if (motDePasse !== confirmation) {
+    erreurEl.textContent = "Les mots de passe ne correspondent pas.";
+    return;
+  }
+  if (motDePasse.length < 8) {
+    erreurEl.textContent = "Le mot de passe doit contenir au moins 8 caractères.";
+    return;
+  }
+
   try {
     const data = await appelApi(`${API}/auth/inscription`, {
       method: "POST",
       body: JSON.stringify({ pseudo, email, motDePasse }),
     });
-    setSession(data.token, data.utilisateurId, data.pseudo, data.role, data.statut);
-    afficherApp(data.pseudo);
+
+    // Le backend renvoie token=null + statut=EN_ATTENTE
+    // → on affiche le message d'attente et on NE connecte PAS
+    succesEl.textContent = data.message || "Compte créé. En attente d'approbation par un administrateur.";
+    succesEl.classList.remove("hidden");
+
+    // Reset du formulaire
+    e.target.reset();
+
+    // Bascule automatiquement sur Connexion après 3 secondes
+    setTimeout(() => {
+      document.getElementById("tab-connexion").click();
+    }, 3000);
+
   } catch (err) {
-    document.getElementById("login-erreur").textContent = err.message;
+    erreurEl.textContent = err.message;
   }
 });
 
