@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block titre %}Rapports{% endblock %}
+{% block contenu %}
+<div class="page-head"><div><h1>Centre de rapports</h1><div class="subtitle">Documents prêts à imprimer</div></div></div>
+<div class="row g-3">
+  <div class="col-md-4">
+    <div class="panel h-100" style="padding:1.25rem;">
+      <h5><i class="bi bi-arrow-left-right" style="color:var(--ok);"></i> Entrées / Sorties</h5>
+      <p style="color:var(--muted); font-size:.88rem;">Mouvements de stock sur une période, prêt à imprimer.</p>
+      <a href="{% url 'rapports:rapport_mouvements' %}?jours=7" class="btn btn-sm btn-outline-brand btn-icon mb-1"><i class="bi bi-calendar-week"></i> 7 derniers jours</a>
+      <a href="{% url 'rapports:rapport_mouvements' %}?jours=30" class="btn btn-sm btn-outline-brand btn-icon"><i class="bi bi-calendar-month"></i> 30 derniers jours</a>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="panel h-100" style="padding:1.25rem;">
+      <h5><i class="bi bi-calendar-x" style="color:var(--bad);"></i> Péremption</h5>
+      <p style="color:var(--muted); font-size:.88rem;">Produits périmés et bientôt périmés.</p>
+      <a href="{% url 'rapports:rapport_peremption' %}" class="btn btn-sm btn-outline-brand btn-icon"><i class="bi bi-file-earmark-text"></i> Générer</a>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="panel h-100" style="padding:1.25rem;">
+      <h5><i class="bi bi-clipboard-data" style="color:var(--violet);"></i> État du stock</h5>
+      <p style="color:var(--muted); font-size:.88rem;">Quantités actuelles et valeur totale du stock.</p>
+      <a href="{% url 'rapports:rapport_stock' %}" class="btn btn-sm btn-outline-brand btn-icon"><i class="bi bi-file-earmark-text"></i> Générer</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

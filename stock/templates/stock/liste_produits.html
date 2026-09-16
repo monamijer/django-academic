@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block titre %}Produits{% endblock %}
+{% block contenu %}
+<div class="page-head">
+  <div>
+    <h1>Produits</h1>
+    <div class="subtitle">{{ page_obj.paginator.count }} article{{ page_obj.paginator.count|pluralize }} au catalogue</div>
+  </div>
+  {% if perms.stock.add_produit or user.est_administrateur %}
+  <a href="{% url 'stock:creer_produit' %}" class="btn btn-brand btn-icon"><i class="bi bi-plus-lg"></i> Ajouter un produit</a>
+  {% endif %}
+</div>
+
+<form method="get" class="filter-bar no-print">
+  <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Nom ou référence...">
+  <select name="categorie" class="form-select">
+    <option value="">Toutes catégories</option>
+    {% for c in categories %}<option value="{{ c.pk }}" {% if categorie_id == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.nom }}</option>{% endfor %}
+  </select>
+  <button class="btn btn-outline-brand btn-icon"><i class="bi bi-search"></i> Rechercher</button>
+</form>
+
+<div class="product-grid">
+  {% for p in page_obj %}
+  <div class="product-card">
+    <div class="swatch" style="background:{{ p.categorie.couleur }};"></div>
+    <a href="{% url 'stock:detail_produit' p.pk %}" class="body" style="text-decoration:none; color:inherit;">
+      <span class="cat-tag">{{ p.categorie.nom }}</span>
+      <span class="name">{{ p.nom }}</span>
+      <span class="ref">{{ p.reference }}</span>
+      <div class="stock-line"><span class="qty">{{ p.quantite_stock }}</span><span class="unit">{{ p.unite }}{{ p.quantite_stock|pluralize }} en stock</span></div>
+      <span class="price">{{ p.prix_unitaire }} FBu</span>
+      <div class="tags">
+        {% if not p.est_actif %}<span class="tag tag-muted"><i class="bi bi-slash-circle"></i> Désactivé</span>{% endif %}
+        {% if p.en_alerte %}<span class="tag tag-bad"><i class="bi bi-exclamation-triangle"></i> Stock bas</span>{% endif %}
+        {% if p.est_perime %}<span class="tag tag-bad"><i class="bi bi-calendar-x"></i> Périmé</span>
+        {% elif p.bientot_perime %}<span class="tag tag-warn"><i class="bi bi-hourglass-split"></i> Bientôt périmé</span>{% endif %}
+      </div>
+    </a>
+    <div class="footer-actions no-print">
+      <a href="{% url 'stock:enregistrer_mouvement' %}?produit={{ p.pk }}" class="icon-btn" title="Nouveau mouvement"><i class="bi bi-arrow-left-right"></i></a>
+      {% if perms.stock.change_produit or user.est_administrateur %}
+      <a href="{% url 'stock:modifier_produit' p.pk %}" class="icon-btn" title="Modifier"><i class="bi bi-pencil"></i></a>
+      <a href="{% url 'stock:basculer_activation_produit' p.pk %}" class="icon-btn" title="Activer/Désactiver"><i class="bi bi-toggle2-on"></i></a>
+      {% endif %}
+      {% if perms.stock.delete_produit or user.est_administrateur %}
+      <a href="{% url 'stock:supprimer_produit' p.pk %}" class="icon-btn danger" title="Supprimer"><i class="bi bi-trash"></i></a>
+      {% endif %}
+    </div>
+  </div>
+  {% empty %}
+  <div class="panel" style="grid-column:1/-1; padding:3rem; text-align:center; color:var(--muted);">
+    <i class="bi bi-inbox" style="font-size:2rem;"></i>
+    <p class="mt-2 mb-0">Aucun produit trouvé.</p>
+  </div>
+  {% endfor %}
+</div>
+{% include "pagination.html" %}
+{% endblock %}

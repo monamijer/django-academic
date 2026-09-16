@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block titre %}Mouvements de stock{% endblock %}
+{% block contenu %}
+<div class="page-head">
+  <div><h1>Mouvements de stock</h1><div class="subtitle">Historique des entrées et sorties</div></div>
+  {% if perms.stock.add_mouvementstock or user.est_administrateur %}
+  <a href="{% url 'stock:enregistrer_mouvement' %}" class="btn btn-brand btn-icon"><i class="bi bi-plus-lg"></i> Nouveau mouvement</a>
+  {% endif %}
+</div>
+<form method="get" class="filter-bar no-print">
+  <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Nom du produit...">
+  <button class="btn btn-outline-brand btn-icon"><i class="bi bi-search"></i> Rechercher</button>
+</form>
+<div class="panel table-panel">
+  <table class="table mb-0">
+    <thead><tr><th>Produit</th><th>Type</th><th>Quantité</th><th>Note</th><th>Utilisateur</th><th>Date</th></tr></thead>
+    <tbody>
+      {% for m in page_obj %}
+      <tr>
+        <td style="font-weight:600;">{{ m.produit }}</td>
+        <td>{% if m.type_mouvement == "ENTREE" %}<span class="tag tag-ok"><i class="bi bi-box-arrow-in-down"></i> Entrée</span>{% else %}<span class="tag tag-bad"><i class="bi bi-box-arrow-up"></i> Sortie</span>{% endif %}</td>
+        <td>{{ m.quantite }}</td>
+        <td style="color:var(--muted);">{{ m.note|default:"—" }}</td>
+        <td>{{ m.utilisateur|default:"—" }}</td>
+        <td style="color:var(--muted);">{{ m.date_mouvement|date:"d/m/Y H:i" }}</td>
+      </tr>
+      {% empty %}<tr><td colspan="6" class="text-center" style="color:var(--muted); padding:2rem;">Aucun mouvement.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "pagination.html" %}
+{% endblock %}

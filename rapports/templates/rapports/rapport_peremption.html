@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block titre %}Rapport de péremption{% endblock %}
+{% block contenu %}
+<div class="page-head no-print">
+  <div><h1>Rapport de péremption</h1></div>
+  <button onclick="window.print()" class="btn btn-brand btn-icon"><i class="bi bi-printer"></i> Imprimer</button>
+</div>
+<div class="text-center d-none d-print-block mb-3"><h3>GESTOCK — Rapport de péremption</h3><p>Généré le {{ aujourdhui|date:"d/m/Y" }}</p></div>
+<h5 style="color:var(--bad);"><i class="bi bi-x-octagon"></i> Produits périmés ({{ perimes|length }})</h5>
+<div class="panel table-panel mb-4">
+<table class="table table-bordered table-sm mb-0">
+  <thead><tr><th>Produit</th><th>Référence</th><th>Catégorie</th><th>Stock restant</th><th>Date de péremption</th></tr></thead>
+  <tbody>
+    {% for p in perimes %}
+    <tr><td>{{ p.nom }}</td><td>{{ p.reference }}</td><td>{{ p.categorie }}</td><td>{{ p.quantite_stock }} {{ p.unite }}</td><td>{{ p.date_peremption|date:"d/m/Y" }}</td></tr>
+    {% empty %}<tr><td colspan="5" class="text-center" style="color:var(--muted);">Aucun produit périmé.</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+<h5 style="color:var(--warn);"><i class="bi bi-exclamation-triangle"></i> Bientôt périmés — 30 jours ({{ bientot|length }})</h5>
+<div class="panel table-panel">
+<table class="table table-bordered table-sm mb-0">
+  <thead><tr><th>Produit</th><th>Référence</th><th>Catégorie</th><th>Stock restant</th><th>Date de péremption</th></tr></thead>
+  <tbody>
+    {% for p in bientot %}
+    <tr><td>{{ p.nom }}</td><td>{{ p.reference }}</td><td>{{ p.categorie }}</td><td>{{ p.quantite_stock }} {{ p.unite }}</td><td>{{ p.date_peremption|date:"d/m/Y" }}</td></tr>
+    {% empty %}<tr><td colspan="5" class="text-center" style="color:var(--muted);">Aucun produit concerné.</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}
