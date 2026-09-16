@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block titre %}Confirmer la suppression{% endblock %}
+{% block contenu %}
+<div class="panel col-md-5" style="padding:1.5rem; border-left:4px solid var(--bad);">
+  <h5><i class="bi bi-exclamation-triangle" style="color:var(--bad);"></i> Confirmer la suppression</h5>
+  <p style="color:var(--muted);">Voulez-vous vraiment supprimer <strong>{{ type_objet }}</strong> « {{ objet }} » ? Cette action est irréversible.</p>
+  <form method="post">
+    {% csrf_token %}
+    <button class="btn btn-danger btn-icon"><i class="bi bi-trash"></i> Supprimer</button>
+    <a href="javascript:history.back()" class="btn btn-outline-secondary">Annuler</a>
+  </form>
+</div>
+{% endblock %}
