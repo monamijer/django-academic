@@ -62,6 +62,10 @@ public class UtilisateurService {
 
     public Utilisateur refuser(Long id) {
         Utilisateur u = obtenirParId(id);
+        // Interdit de refuser le dernier admin actif (l'appli deviendrait inutilisable)
+        if (u.getRole() == RoleUtilisateur.ADMIN) {
+            verifierPasDernierAdmin(u, "refuser");
+        }
         u.setStatut(StatutUtilisateur.REFUSE);
         return utilisateurRepository.save(u);
     }
@@ -74,6 +78,7 @@ public class UtilisateurService {
 
     public Utilisateur retrograder(Long id) {
         Utilisateur u = obtenirParId(id);
+        verifierPasDernierAdmin(u, "rétrograder");
         u.setRole(RoleUtilisateur.USER);
         return utilisateurRepository.save(u);
     }
@@ -85,11 +90,12 @@ public class UtilisateurService {
     }
 
     /**
-     * Suppression en cascade : JPA s'occupe de supprimer les Visionnage et Serie
-     * associés grâce à cascade = CascadeType.ALL sur les relations.
+     * Suppression en cascade : JPA supprime les Visionnage et Serie associés
+     * grâce à cascade = CascadeType.ALL sur les relations.
      */
     public void supprimer(Long id) {
         Utilisateur u = obtenirParId(id);
+        verifierPasDernierAdmin(u, "supprimer");
         utilisateurRepository.delete(u);
     }
 
@@ -103,5 +109,28 @@ public class UtilisateurService {
                 .filter(u -> u.getRole() == RoleUtilisateur.ADMIN)
                 .count();
         return new StatistiquesAdminResponse(total, attente, approuves, refuses, admins);
+    }
+
+    // ---------- Garde-fous ----------
+
+    /**
+     * Empêche de rétrograder, refuser ou supprimer le dernier administrateur
+     * actif de l'application. Sans ce garde-fou, un admin pourrait se
+     * "verrouiller dehors" et plus personne ne pourrait administrer la plateforme.
+     */
+    private void verifierPasDernierAdmin(Utilisateur cible, String action) {
+        if (cible.getRole() != RoleUtilisateur.ADMIN) return;
+
+        long nbAdminsApprouves = utilisateurRepository.findAll().stream()
+                .filter(u -> u.getRole() == RoleUtilisateur.ADMIN
+                          && u.getStatut() == StatutUtilisateur.APPROUVE)
+                .count();
+
+        if (nbAdminsApprouves <= 1) {
+            throw new BusinessException(
+                "Impossible de " + action + " le dernier administrateur actif de l'application. "
+                + "Promouvez un autre utilisateur en ADMIN avant."
+            );
+        }
     }
 }

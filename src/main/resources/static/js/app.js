@@ -836,14 +836,19 @@ async function chargerListeAdmin() {
           <p class="meta">Statut : <strong class="statut-${u.statut.toLowerCase()}">${libellesStatut[u.statut] || u.statut}</strong></p>
           <p class="meta">Inscrit le : ${u.dateInscription ? new Date(u.dateInscription).toLocaleDateString("fr-FR") : "—"}</p>
         </div>
-        <div class="admin-actions">
-          ${u.statut !== "APPROUVE" ? `<button class="btn-approuver" data-id="${u.id}" data-action="approuver">Approuver</button>` : ""}
-          ${u.statut !== "REFUSE" ? `<button class="btn-refuser" data-id="${u.id}" data-action="refuser">Refuser</button>` : ""}
-          ${u.role !== "ADMIN" ? `<button class="btn-promouvoir" data-id="${u.id}" data-action="promouvoir">Promouvoir</button>` : ""}
-          ${u.role === "ADMIN" ? `<button class="btn-retrograder" data-id="${u.id}" data-action="retrograder">Rétrograder</button>` : ""}
-          <button class="btn-motdepasse" data-id="${u.id}" data-action="motdepasse">Changer MDP</button>
-          <button class="btn-supprimer" data-id="${u.id}" data-action="supprimer">Supprimer</button>
-        </div>
+               ${(() => {
+          const dernierAdmin = u.role === "ADMIN" && utilisateurs.filter(x => x.role === "ADMIN" && x.statut === "APPROUVE").length <= 1;
+          return `
+          <div class="admin-actions">
+            ${u.statut !== "APPROUVE" ? `<button class="btn-approuver" data-id="${u.id}" data-action="approuver">Approuver</button>` : ""}
+            ${u.statut !== "REFUSE" ? `<button class="btn-refuser" data-id="${u.id}" data-action="refuser" ${dernierAdmin ? "disabled" : ""}>Refuser</button>` : ""}
+            ${u.role !== "ADMIN" ? `<button class="btn-promouvoir" data-id="${u.id}" data-action="promouvoir">Promouvoir</button>` : ""}
+            ${u.role === "ADMIN" ? `<button class="btn-retrograder" data-id="${u.id}" data-action="retrograder" ${dernierAdmin ? "disabled" : ""}>Rétrograder</button>` : ""}
+            <button class="btn-motdepasse" data-id="${u.id}" data-action="motdepasse">Changer MDP</button>
+            <button class="btn-supprimer" data-id="${u.id}" data-action="supprimer" ${dernierAdmin ? "disabled" : ""}>Supprimer</button>
+          </div>
+          `;
+        })()}
       </div>
     `);
 
