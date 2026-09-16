@@ -26,8 +26,14 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.util.UriBuilder;
+import com.monprojet.series.dto.response.FournisseurResponse;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.function.Function;
 
@@ -143,6 +149,49 @@ public class TmdbService {
         return credits.cast().stream()
                 .map(c -> new MembreCastingResponse(c.id(), c.name(), c.character(), construireUrlImage(c.profilePath())))
                 .toList();
+    }
+
+        /** Watch providers. */
+    public Map<String, List<FournisseurResponse>> listerFournisseurs(Long tmdbId) {
+        TmdbWatchProvidersDto dto = appeler(uri -> uri.path("/tv/{id}/watch/providers")
+                .queryParam("api_key", apiKey)
+                .build(tmdbId), TmdbWatchProvidersDto.class);
+
+        Map<String, List<FournisseurResponse>> resultat = new LinkedHashMap<>();
+
+        if (dto.results() == null) return resultat;
+
+        dto.results().forEach((codePays, data) -> {
+            List<FournisseurResponse> liste = new ArrayList<>();
+
+            ajouterFournisseurs(liste, data.flatrate(), "FLATRATE", data.link());
+            ajouterFournisseurs(liste, data.rent(),     "RENT",     data.link());
+            ajouterFournisseurs(liste, data.buy(),      "BUY",      data.link());
+
+            if (!liste.isEmpty()) {
+                resultat.put(codePays, liste);
+            }
+        });
+
+        return resultat;
+    }
+
+    private void ajouterFournisseurs(List<FournisseurResponse> cible,
+                                     List<TmdbWatchProvidersDto.Provider> sources,
+                                     String type,
+                                     String lien) {
+        if (sources == null) return;
+        sources.forEach(p -> cible.add(new FournisseurResponse(
+                p.providerName(),
+                construireUrlLogoProvider(p.logoPath()),
+                type,
+                lien
+        )));
+    }
+
+    /** TMDB stock logos providers en /xxx.jpg  */
+    private String construireUrlLogoProvider(String logoPath) {
+        return logoPath == null ? null : "https://image.tmdb.org/t/p/w92" + logoPath;
     }
 
     // ---------- Acteurs ----------
