@@ -1,22 +1,20 @@
 {% extends "base.html" %}
 {% block titre %}{{ titre }}{% endblock %}
 {% block contenu %}
-<div class="card section-produits col-md-5">
-  <div class="card-body">
-    <h4><i class="bi bi-tags"></i> {{ titre }}</h4>
-    <form method="post">{% csrf_token %}
-      {% for field in form %}
-        <div class="mb-3 {% if field.field.widget.input_type == 'checkbox' %}form-check{% endif %}">
-          {% if field.field.widget.input_type == 'checkbox' %}
-            {{ field }} <label class="form-check-label">{{ field.label }}</label>
-          {% else %}
-            <label class="form-label">{{ field.label }}</label>{{ field }}
-          {% endif %}
-        </div>
-      {% endfor %}
-      <button class="btn btn-primary btn-icon"><i class="bi bi-check-lg"></i> Enregistrer</button>
-      <a href="{% url 'stock:liste_categories' %}" class="btn btn-outline-secondary">Annuler</a>
-    </form>
-  </div>
+<div class="page-head"><div><h1>{{ titre }}</h1></div></div>
+<div class="panel col-md-5" style="padding:1.5rem;">
+  <form method="post">{% csrf_token %}
+    {% for field in form %}
+      <div class="mb-3 {% if field.field.widget.input_type == 'checkbox' %}form-check{% endif %}">
+        {% if field.field.widget.input_type == 'checkbox' %}
+          {{ field }} <label class="form-check-label">{{ field.label }}</label>
+        {% else %}
+          <label class="form-label">{{ field.label }}</label>{{ field }}
+        {% endif %}
+      </div>
+    {% endfor %}
+    <button class="btn btn-brand btn-icon"><i class="bi bi-check-lg"></i> Enregistrer</button>
+    <a href="{% url 'stock:liste_categories' %}" class="btn btn-outline-secondary">Annuler</a>
+  </form>
 </div>
 {% endblock %}

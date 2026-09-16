@@ -1,49 +1,59 @@
 {% extends "base.html" %}
 {% block titre %}Produits{% endblock %}
 {% block contenu %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h3><i class="bi bi-box-seam"></i> Produits</h3>
+<div class="page-head">
+  <div>
+    <h1>Produits</h1>
+    <div class="subtitle">{{ page_obj.paginator.count }} article{{ page_obj.paginator.count|pluralize }} au catalogue</div>
+  </div>
   {% if perms.stock.add_produit or user.est_administrateur %}
-  <a href="{% url 'stock:creer_produit' %}" class="btn btn-primary btn-icon"><i class="bi bi-plus-lg"></i> Ajouter un produit</a>
+  <a href="{% url 'stock:creer_produit' %}" class="btn btn-brand btn-icon"><i class="bi bi-plus-lg"></i> Ajouter un produit</a>
   {% endif %}
 </div>
-<form method="get" class="row g-2 mb-3 no-print">
-  <div class="col-auto"><input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Nom ou référence..."></div>
-  <div class="col-auto">
-    <select name="categorie" class="form-select">
-      <option value="">Toutes catégories</option>
-      {% for c in categories %}<option value="{{ c.pk }}" {% if categorie_id == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.nom }}</option>{% endfor %}
-    </select>
-  </div>
-  <div class="col-auto"><button class="btn btn-outline-secondary btn-icon"><i class="bi bi-search"></i> Rechercher</button></div>
+
+<form method="get" class="filter-bar no-print">
+  <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Nom ou référence...">
+  <select name="categorie" class="form-select">
+    <option value="">Toutes catégories</option>
+    {% for c in categories %}<option value="{{ c.pk }}" {% if categorie_id == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.nom }}</option>{% endfor %}
+  </select>
+  <button class="btn btn-outline-brand btn-icon"><i class="bi bi-search"></i> Rechercher</button>
 </form>
-<div class="card section-produits">
-  <div class="table-responsive">
-    <table class="table table-hover mb-0 align-middle">
-      <thead class="table-light"><tr><th>Produit</th><th>Catégorie</th><th>Stock</th><th>Péremption</th><th>Statut</th><th class="no-print">Actions</th></tr></thead>
-      <tbody>
-        {% for p in page_obj %}
-        <tr>
-          <td><a href="{% url 'stock:detail_produit' p.pk %}">{{ p.nom }}</a><div class="text-muted small">{{ p.reference }}</div></td>
-          <td><span class="badge-couleur" style="background:{{ p.categorie.couleur }}"></span> {{ p.categorie.nom }}</td>
-          <td>{{ p.quantite_stock }} {{ p.unite }} {% if p.en_alerte %}<i class="bi bi-exclamation-triangle text-danger" title="Stock bas"></i>{% endif %}</td>
-          <td>{% if p.date_peremption %}{{ p.date_peremption|date:"d/m/Y" }} {% if p.est_perime %}<span class="badge bg-danger">Périmé</span>{% elif p.bientot_perime %}<span class="badge bg-warning text-dark">Bientôt</span>{% endif %}{% else %}—{% endif %}</td>
-          <td>{% if p.est_actif %}<span class="badge bg-success">Actif</span>{% else %}<span class="badge bg-secondary">Désactivé</span>{% endif %}</td>
-          <td class="no-print">
-            <a href="{% url 'stock:enregistrer_mouvement' %}?produit={{ p.pk }}" class="btn btn-sm btn-outline-success" title="Mouvement"><i class="bi bi-arrow-left-right"></i></a>
-            {% if perms.stock.change_produit or user.est_administrateur %}
-            <a href="{% url 'stock:modifier_produit' p.pk %}" class="btn btn-sm btn-outline-primary" title="Modifier"><i class="bi bi-pencil"></i></a>
-            <a href="{% url 'stock:basculer_activation_produit' p.pk %}" class="btn btn-sm btn-outline-warning" title="Activer/Désactiver"><i class="bi bi-toggle2-on"></i></a>
-            {% endif %}
-            {% if perms.stock.delete_produit or user.est_administrateur %}
-            <a href="{% url 'stock:supprimer_produit' p.pk %}" class="btn btn-sm btn-outline-danger" title="Supprimer"><i class="bi bi-trash"></i></a>
-            {% endif %}
-          </td>
-        </tr>
-        {% empty %}<tr><td colspan="6" class="text-center text-muted py-4">Aucun produit trouvé.</td></tr>{% endfor %}
-      </tbody>
-    </table>
+
+<div class="product-grid">
+  {% for p in page_obj %}
+  <div class="product-card">
+    <div class="swatch" style="background:{{ p.categorie.couleur }};"></div>
+    <a href="{% url 'stock:detail_produit' p.pk %}" class="body" style="text-decoration:none; color:inherit;">
+      <span class="cat-tag">{{ p.categorie.nom }}</span>
+      <span class="name">{{ p.nom }}</span>
+      <span class="ref">{{ p.reference }}</span>
+      <div class="stock-line"><span class="qty">{{ p.quantite_stock }}</span><span class="unit">{{ p.unite }}{{ p.quantite_stock|pluralize }} en stock</span></div>
+      <span class="price">{{ p.prix_unitaire }} FBu</span>
+      <div class="tags">
+        {% if not p.est_actif %}<span class="tag tag-muted"><i class="bi bi-slash-circle"></i> Désactivé</span>{% endif %}
+        {% if p.en_alerte %}<span class="tag tag-bad"><i class="bi bi-exclamation-triangle"></i> Stock bas</span>{% endif %}
+        {% if p.est_perime %}<span class="tag tag-bad"><i class="bi bi-calendar-x"></i> Périmé</span>
+        {% elif p.bientot_perime %}<span class="tag tag-warn"><i class="bi bi-hourglass-split"></i> Bientôt périmé</span>{% endif %}
+      </div>
+    </a>
+    <div class="footer-actions no-print">
+      <a href="{% url 'stock:enregistrer_mouvement' %}?produit={{ p.pk }}" class="icon-btn" title="Nouveau mouvement"><i class="bi bi-arrow-left-right"></i></a>
+      {% if perms.stock.change_produit or user.est_administrateur %}
+      <a href="{% url 'stock:modifier_produit' p.pk %}" class="icon-btn" title="Modifier"><i class="bi bi-pencil"></i></a>
+      <a href="{% url 'stock:basculer_activation_produit' p.pk %}" class="icon-btn" title="Activer/Désactiver"><i class="bi bi-toggle2-on"></i></a>
+      {% endif %}
+      {% if perms.stock.delete_produit or user.est_administrateur %}
+      <a href="{% url 'stock:supprimer_produit' p.pk %}" class="icon-btn danger" title="Supprimer"><i class="bi bi-trash"></i></a>
+      {% endif %}
+    </div>
   </div>
+  {% empty %}
+  <div class="panel" style="grid-column:1/-1; padding:3rem; text-align:center; color:var(--muted);">
+    <i class="bi bi-inbox" style="font-size:2rem;"></i>
+    <p class="mt-2 mb-0">Aucun produit trouvé.</p>
+  </div>
+  {% endfor %}
 </div>
 {% include "pagination.html" %}
 {% endblock %}
