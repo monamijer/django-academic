@@ -543,3 +543,98 @@ main { padding: var(--espace); max-width: 900px; margin: 0 auto; }
   margin-top: 0.6rem;
 }
 .fournisseurs-source a { color: var(--couleur-primaire); }
+
+/* ===== Badge rôle ===== */
+#badge-role {
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--rayon);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+#badge-role.badge-admin {
+  background: #f39c12;
+  color: white;
+}
+
+.badge-role-inline {
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  vertical-align: middle;
+}
+.badge-admin { background: #f39c12; color: white; }
+.badge-user  { background: #3498db; color: white; }
+
+/* ===== Admin ===== */
+.admin-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--espace);
+  margin-bottom: var(--espace);
+}
+
+.stat-card {
+  background: var(--couleur-carte);
+  border-radius: var(--rayon);
+  padding: var(--espace);
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.stat-card .stat-valeur { font-size: 1.8rem; font-weight: 700; color: var(--couleur-primaire); }
+.stat-card .stat-label  { font-size: 0.8rem; color: #666; }
+.stat-attente   .stat-valeur { color: #f39c12; }
+.stat-approuve  .stat-valeur { color: #2ecc71; }
+.stat-refuse    .stat-valeur { color: #e74c3c; }
+.stat-admin     .stat-valeur { color: #9b59b6; }
+
+.admin-liste {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--espace);
+}
+
+.admin-carte {
+  background: var(--couleur-carte);
+  border-radius: var(--rayon);
+  padding: var(--espace);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.admin-info h3 { font-size: 1rem; margin-bottom: 0.25rem; }
+.admin-info .meta { font-size: 0.85rem; color: #666; }
+
+.statut-approuve { color: #2ecc71; }
+.statut-en_attente { color: #f39c12; }
+.statut-refuse { color: #e74c3c; }
+
+.admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.admin-actions > button {
+  flex: 1 1 auto;
+  min-height: 36px;
+  padding: 0 0.7rem;
+  border: none;
+  border-radius: var(--rayon);
+  color: white;
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+.btn-approuver   { background: #2ecc71; }
+.btn-refuser     { background: #e74c3c; }
+.btn-promouvoir  { background: #9b59b6; }
+.btn-retrograder { background: #f39c12; }
+.btn-motdepasse  { background: #3498db; }
+.admin-actions > button:hover { opacity: 0.9; }

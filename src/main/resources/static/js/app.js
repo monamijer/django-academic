@@ -15,16 +15,23 @@ function getToken() { return localStorage.getItem("token"); }
 function getUtilisateurId() { return localStorage.getItem("utilisateurId"); }
 function getPseudo() { return localStorage.getItem("pseudo"); }
 
-function setSession(token, utilisateurId, pseudo) {
+function setSession(token, utilisateurId, pseudo, role, statut) {
   localStorage.setItem("token", token);
   localStorage.setItem("utilisateurId", utilisateurId);
   localStorage.setItem("pseudo", pseudo);
+  localStorage.setItem("role", role);
+  localStorage.setItem("statut", statut);
 }
+
+function getRole() { return localStorage.getItem("role"); }
+function getStatut() { return localStorage.getItem("statut"); }
 
 function deconnexion() {
   localStorage.removeItem("token");
   localStorage.removeItem("utilisateurId");
   localStorage.removeItem("pseudo");
+  localStorage.removeItem("role");
+  localStorage.removeItem("statut");
   location.reload();
 }
 
@@ -97,6 +104,7 @@ function afficherApp(pseudo) {
   document.getElementById("login").classList.add("hidden");
   document.getElementById("app").classList.remove("hidden");
   if (pseudo) document.getElementById("nom-utilisateur").textContent = `👤 ${pseudo}`;
+  afficherOngletAdminSiBesoin();
   chargerMesSeries();
   chargerGenres();
 }
@@ -110,7 +118,7 @@ document.getElementById("form-connexion").addEventListener("submit", async (e) =
       method: "POST",
       body: JSON.stringify({ email, motDePasse }),
     });
-    setSession(data.token, data.utilisateurId, data.pseudo);
+    setSession(data.token, data.utilisateurId, data.pseudo, data.role, data.statut);
     afficherApp(data.pseudo);
   } catch (err) {
     document.getElementById("login-erreur").textContent = "Identifiants invalides";
@@ -127,7 +135,7 @@ document.getElementById("form-inscription").addEventListener("submit", async (e)
       method: "POST",
       body: JSON.stringify({ pseudo, email, motDePasse }),
     });
-    setSession(data.token, data.utilisateurId, data.pseudo);
+    setSession(data.token, data.utilisateurId, data.pseudo, data.role, data.statut);
     afficherApp(data.pseudo);
   } catch (err) {
     document.getElementById("login-erreur").textContent = err.message;
@@ -159,6 +167,10 @@ document.querySelectorAll(".tab-btn").forEach((btn) => {
     if (btn.dataset.tab === "decouvrir" && !ongletDecouvrirCharge) {
       ongletDecouvrirCharge = true;
       chargerCategorieTmdb("populaires", document.querySelector(".souscat-btn[data-cat='populaires']"));
+    }
+        if (btn.dataset.tab === "admin") {
+      chargerStatsAdmin();
+      chargerListeAdmin();
     }
   });
 });
@@ -756,6 +768,141 @@ async function afficherFilmographie(acteur) {
 
   afficherResultatsTmdb(series, "resultats-filmographie", { avecImport: true });
 }
+
+// --- ADMIN ---
+
+function afficherOngletAdminSiBesoin() {
+  const badge = document.getElementById("badge-role");
+  const ongletAdmin = document.getElementById("onglet-admin");
+  if (getRole() === "ADMIN") {
+    badge.textContent = "ADMIN";
+    badge.classList.add("badge-admin");
+    ongletAdmin.classList.remove("hidden");
+  } else {
+    badge.textContent = "";
+    badge.classList.remove("badge-admin");
+    ongletAdmin.classList.add("hidden");
+  }
+}
+
+async function chargerStatsAdmin() {
+  const conteneur = document.getElementById("admin-stats");
+  conteneur.innerHTML = messageChargement();
+  try {
+    const s = await appelApi(`${API}/admin/utilisateurs/statistiques`);
+    conteneur.innerHTML = `
+      <div class="stat-card"><span class="stat-valeur">${s.totalUtilisateurs}</span><span class="stat-label">Total</span></div>
+      <div class="stat-card stat-attente"><span class="stat-valeur">${s.enAttente}</span><span class="stat-label">En attente</span></div>
+      <div class="stat-card stat-approuve"><span class="stat-valeur">${s.approuves}</span><span class="stat-label">Approuvés</span></div>
+      <div class="stat-card stat-refuse"><span class="stat-valeur">${s.refuses}</span><span class="stat-label">Refusés</span></div>
+      <div class="stat-card stat-admin"><span class="stat-valeur">${s.admins}</span><span class="stat-label">Admins</span></div>
+    `;
+  } catch (err) {
+    conteneur.innerHTML = messageErreur(err.message);
+  }
+}
+
+async function chargerListeAdmin() {
+  const conteneur = document.getElementById("admin-liste");
+  const statut = document.getElementById("select-statut-admin").value;
+  conteneur.innerHTML = messageChargement();
+
+  const url = statut
+    ? `${API}/admin/utilisateurs?statut=${statut}`
+    : `${API}/admin/utilisateurs`;
+
+  let utilisateurs;
+  try {
+    utilisateurs = await appelApi(url);
+  } catch (err) {
+    conteneur.innerHTML = messageErreur(err.message);
+    return;
+  }
+
+  if (!Array.isArray(utilisateurs) || utilisateurs.length === 0) {
+    conteneur.innerHTML = messageVide("Aucun utilisateur à afficher.");
+    return;
+  }
+
+  const libellesStatut = { EN_ATTENTE: "En attente", APPROUVE: "Approuvé", REFUSE: "Refusé" };
+
+  conteneur.innerHTML = "";
+  for (const u of utilisateurs) {
+    const carte = creerElement(`
+      <div class="admin-carte">
+        <div class="admin-info">
+          <h3>${u.pseudo} <span class="badge-role-inline badge-${u.role.toLowerCase()}">${u.role}</span></h3>
+          <p class="meta">${u.email}</p>
+          <p class="meta">Statut : <strong class="statut-${u.statut.toLowerCase()}">${libellesStatut[u.statut] || u.statut}</strong></p>
+          <p class="meta">Inscrit le : ${u.dateInscription ? new Date(u.dateInscription).toLocaleDateString("fr-FR") : "—"}</p>
+        </div>
+        <div class="admin-actions">
+          ${u.statut !== "APPROUVE" ? `<button class="btn-approuver" data-id="${u.id}" data-action="approuver">Approuver</button>` : ""}
+          ${u.statut !== "REFUSE" ? `<button class="btn-refuser" data-id="${u.id}" data-action="refuser">Refuser</button>` : ""}
+          ${u.role !== "ADMIN" ? `<button class="btn-promouvoir" data-id="${u.id}" data-action="promouvoir">Promouvoir</button>` : ""}
+          ${u.role === "ADMIN" ? `<button class="btn-retrograder" data-id="${u.id}" data-action="retrograder">Rétrograder</button>` : ""}
+          <button class="btn-motdepasse" data-id="${u.id}" data-action="motdepasse">Changer MDP</button>
+          <button class="btn-supprimer" data-id="${u.id}" data-action="supprimer">Supprimer</button>
+        </div>
+      </div>
+    `);
+
+    carte.querySelectorAll("[data-action]").forEach((btn) => {
+      btn.addEventListener("click", () => actionAdmin(btn.dataset.action, u));
+    });
+
+    conteneur.appendChild(carte);
+  }
+}
+
+async function actionAdmin(action, u) {
+  try {
+    switch (action) {
+      case "approuver":
+        await appelApi(`${API}/admin/utilisateurs/${u.id}/approuver`, { method: "PATCH" });
+        break;
+      case "refuser":
+        if (!confirm(`Refuser le compte de ${u.pseudo} ?`)) return;
+        await appelApi(`${API}/admin/utilisateurs/${u.id}/refuser`, { method: "PATCH" });
+        break;
+      case "promouvoir":
+        await appelApi(`${API}/admin/utilisateurs/${u.id}/promouvoir`, { method: "PATCH" });
+        break;
+      case "retrograder":
+        if (!confirm(`Rétrograder ${u.pseudo} en USER ?`)) return;
+        await appelApi(`${API}/admin/utilisateurs/${u.id}/retrograder`, { method: "PATCH" });
+        break;
+      case "supprimer":
+        if (!confirm(`Supprimer DÉFINITIVEMENT ${u.pseudo} ? Toutes ses séries seront perdues.`)) return;
+        await appelApi(`${API}/admin/utilisateurs/${u.id}`, { method: "DELETE" });
+        break;
+      case "motdepasse": {
+        const nouveau = prompt(`Nouveau mot de passe pour ${u.pseudo} (min. 8 caractères) :`);
+        if (!nouveau || nouveau.length < 8) {
+          if (nouveau) alert("Le mot de passe doit faire au moins 8 caractères.");
+          return;
+        }
+        await appelApi(`${API}/admin/utilisateurs/${u.id}/mot-de-passe`, {
+          method: "PATCH",
+          body: JSON.stringify({ nouveauMotDePasse: nouveau }),
+        });
+        alert(`Mot de passe de ${u.pseudo} changé avec succès.`);
+        break;
+      }
+    }
+    chargerListeAdmin();
+    chargerStatsAdmin();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+document.getElementById("select-statut-admin").addEventListener("change", chargerListeAdmin);
+document.getElementById("btn-rafraichir-admin").addEventListener("click", () => {
+  chargerStatsAdmin();
+  chargerListeAdmin();
+});
+
 
 // --- Startup ---
 
