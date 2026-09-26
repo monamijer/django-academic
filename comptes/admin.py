@@ -6,9 +6,10 @@ from .models import JournalActivite, Utilisateur
 
 @admin.register(Utilisateur)
 class UtilisateurAdmin(UserAdmin):
-    list_display = ("username", "email", "est_administrateur", "est_actif_compte", "is_staff")
+    list_display = ("username", "email", "role", "faculte", "departement", "est_actif_compte")
+    list_filter = ("role", "faculte", "departement")
     fieldsets = UserAdmin.fieldsets + (
-        ("Rôles GESTOCK", {"fields": ("telephone", "est_administrateur", "est_actif_compte")}),
+        ("Rôle académique", {"fields": ("role", "faculte", "departement", "telephone", "est_actif_compte")}),
     )
 
 

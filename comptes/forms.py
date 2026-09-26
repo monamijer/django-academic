@@ -1,6 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
-from django.contrib.auth.models import Group
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 
 from .models import Utilisateur
 
@@ -16,18 +15,36 @@ class ConnexionForm(AuthenticationForm):
     )
 
 
+class ProfilForm(forms.ModelForm):
+    """Formulaire de libre-service : un utilisateur ne modifie que ses propres
+    informations personnelles, jamais son rôle ni son périmètre."""
+
+    class Meta:
+        model = Utilisateur
+        fields = ["first_name", "last_name", "email", "telephone"]
+        widgets = {
+            "first_name": forms.TextInput(attrs={"class": "form-control"}),
+            "last_name": forms.TextInput(attrs={"class": "form-control"}),
+            "email": forms.EmailInput(attrs={"class": "form-control"}),
+            "telephone": forms.TextInput(attrs={"class": "form-control"}),
+        }
+
+
+class ChangerMotDePasseForm(PasswordChangeForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs["class"] = "form-control"
+
+
 class UtilisateurForm(forms.ModelForm):
-    groupes = forms.ModelMultipleChoiceField(
-        queryset=Group.objects.all(), required=False,
-        widget=forms.SelectMultiple(attrs={"class": "form-select"}),
-        label="Groupes / rôles"
-    )
+    """Formulaire administratif complet : réservé à l'administrateur système."""
 
     class Meta:
         model = Utilisateur
         fields = [
             "username", "first_name", "last_name", "email", "telephone",
-            "est_administrateur", "est_actif_compte", "groupes",
+            "role", "faculte", "departement", "est_actif_compte",
         ]
         widgets = {
             "username": forms.TextInput(attrs={"class": "form-control"}),
@@ -35,43 +52,26 @@ class UtilisateurForm(forms.ModelForm):
             "last_name": forms.TextInput(attrs={"class": "form-control"}),
             "email": forms.EmailInput(attrs={"class": "form-control"}),
             "telephone": forms.TextInput(attrs={"class": "form-control"}),
-            "est_administrateur": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "role": forms.Select(attrs={"class": "form-select"}),
+            "faculte": forms.Select(attrs={"class": "form-select"}),
+            "departement": forms.Select(attrs={"class": "form-select"}),
             "est_actif_compte": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if self.instance and self.instance.pk:
-            self.fields["groupes"].initial = self.instance.groups.all()
+
+class UtilisateurCreationForm(UtilisateurForm):
+    password1 = forms.CharField(label="Mot de passe", widget=forms.PasswordInput(attrs={"class": "form-control"}))
+    password2 = forms.CharField(label="Confirmation", widget=forms.PasswordInput(attrs={"class": "form-control"}))
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get("password1") != cleaned.get("password2"):
+            raise forms.ValidationError("Les deux mots de passe ne correspondent pas.")
+        return cleaned
 
     def save(self, commit=True):
-        utilisateur = super().save(commit=commit)
+        utilisateur = super().save(commit=False)
+        utilisateur.set_password(self.cleaned_data["password1"])
         if commit:
-            utilisateur.groups.set(self.cleaned_data["groupes"])
-        return utilisateur
-
-
-class UtilisateurCreationForm(UserCreationForm):
-    groupes = forms.ModelMultipleChoiceField(
-        queryset=Group.objects.all(), required=False,
-        widget=forms.SelectMultiple(attrs={"class": "form-select"}),
-        label="Groupes / rôles"
-    )
-
-    class Meta(UserCreationForm.Meta):
-        model = Utilisateur
-        fields = ["username", "first_name", "last_name", "email", "telephone", "est_administrateur"]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for name in ["username", "first_name", "last_name", "email", "telephone"]:
-            self.fields[name].widget.attrs["class"] = "form-control"
-        self.fields["password1"].widget.attrs["class"] = "form-control"
-        self.fields["password2"].widget.attrs["class"] = "form-control"
-        self.fields["est_administrateur"].widget.attrs["class"] = "form-check-input"
-
-    def save(self, commit=True):
-        utilisateur = super().save(commit=commit)
-        if commit:
-            utilisateur.groups.set(self.cleaned_data["groupes"])
+            utilisateur.save()
         return utilisateur
