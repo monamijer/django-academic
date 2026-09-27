@@ -1,3 +1,4 @@
 from django.db import models
 
-# Create your models here.
+# Aucun modèle propre à ce module : les rapports lisent les données
+# d'academique et etudiants, ils ne stockent rien eux-mêmes.

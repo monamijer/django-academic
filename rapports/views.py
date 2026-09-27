@@ -1,71 +1,94 @@
-from datetime import timedelta
-
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-from django.utils import timezone
+from django.shortcuts import get_object_or_404, redirect, render
 
-from comptes.models import enregistrer_activite
-from stock.models import MouvementStock, Produit
-
-
-@login_required
-def rapport_mouvements(request):
-    """Rapport imprimable des entrées/sorties sur une période (7 jours par défaut)."""
-    jours = int(request.GET.get("jours", 7))
-    date_fin = timezone.now()
-    date_debut = date_fin - timedelta(days=jours)
-
-    mouvements = MouvementStock.objects.select_related("produit", "utilisateur").filter(
-        date_mouvement__range=(date_debut, date_fin)
-    )
-    total_entrees = sum(m.quantite for m in mouvements if m.type_mouvement == "ENTREE")
-    total_sorties = sum(m.quantite for m in mouvements if m.type_mouvement == "SORTIE")
-
-    par_produit = {}
-    for m in mouvements:
-        stats = par_produit.setdefault(m.produit, {"entrees": 0, "sorties": 0})
-        if m.type_mouvement == "ENTREE":
-            stats["entrees"] += m.quantite
-        else:
-            stats["sorties"] += m.quantite
-
-    enregistrer_activite(request.user, "IMPRESSION", "Rapport", details=f"Mouvements sur {jours} jours")
-    return render(request, "rapports/rapport_mouvements.html", {
-        "mouvements": mouvements.order_by("-date_mouvement"),
-        "par_produit": par_produit,
-        "total_entrees": total_entrees,
-        "total_sorties": total_sorties,
-        "jours": jours,
-        "date_debut": date_debut,
-        "date_fin": date_fin,
-    })
+from academique.models import Cours
+from comptes.models import Utilisateur, enregistrer_activite
+from etudiants.models import Etudiant
 
 
-@login_required
-def rapport_peremption(request):
-    """Rapport imprimable des produits périmés et bientôt périmés."""
-    produits = Produit.objects.filter(date_peremption__isnull=False).select_related("categorie")
-    perimes = [p for p in produits if p.est_perime]
-    bientot = [p for p in produits if p.bientot_perime]
-
-    enregistrer_activite(request.user, "IMPRESSION", "Rapport", details="Rapport de péremption")
-    return render(request, "rapports/rapport_peremption.html", {
-        "perimes": perimes, "bientot": bientot, "aujourdhui": timezone.now().date(),
-    })
-
-
-@login_required
-def rapport_stock_actuel(request):
-    """Rapport imprimable de l'état complet du stock, avec alertes de seuil."""
-    produits = Produit.objects.filter(est_actif=True).select_related("categorie").order_by("categorie__nom", "nom")
-    valeur_totale = sum(p.quantite_stock * p.prix_unitaire for p in produits)
-
-    enregistrer_activite(request.user, "IMPRESSION", "Rapport", details="État du stock")
-    return render(request, "rapports/rapport_stock.html", {
-        "produits": produits, "valeur_totale": valeur_totale,
-    })
+def _etudiants_visibles(user):
+    if user.a_acces_global:
+        return Etudiant.objects.all()
+    return Etudiant.objects.filter(filiere__departement__in=user.departements_geres())
 
 
 @login_required
 def centre_rapports(request):
     return render(request, "rapports/centre_rapports.html")
+
+
+@login_required
+def mon_releve(request):
+    """Un étudiant imprime son propre relevé — indépendant du filtrage par
+    périmètre de gestion, qui ne le couvre pas puisqu'il gère seulement ses
+    propres données, pas celles d'un département."""
+    etudiant = getattr(request.user, "fiche_etudiant", None)
+    if etudiant is None:
+        messages.error(request, "Aucune fiche étudiant associée à ce compte.")
+        return redirect("comptes:tableau_bord")
+    notes = etudiant.notes.select_related("cours", "annee_academique")
+    enregistrer_activite(request.user, "IMPRESSION", "Rapport", details="Mon relevé de notes")
+    return render(request, "rapports/releve_notes.html", {
+        "etudiant": etudiant, "notes": notes,
+        "moyenne": etudiant.moyenne_generale(), "mention": etudiant.mention(),
+    })
+
+
+@login_required
+def releve_notes(request, pk):
+    etudiant = get_object_or_404(_etudiants_visibles(request.user), pk=pk)
+    notes = etudiant.notes.select_related("cours", "annee_academique")
+    enregistrer_activite(request.user, "IMPRESSION", "Rapport", details=f"Relevé de notes — {etudiant}")
+    return render(request, "rapports/releve_notes.html", {
+        "etudiant": etudiant, "notes": notes,
+        "moyenne": etudiant.moyenne_generale(), "mention": etudiant.mention(),
+    })
+
+
+@login_required
+def liste_etudiants_departement(request):
+    departements = request.user.departements_geres()
+    etudiants = _etudiants_visibles(request.user).select_related("filiere", "utilisateur").order_by("filiere__nom", "matricule")
+    enregistrer_activite(request.user, "IMPRESSION", "Rapport", details="Liste des étudiants")
+    return render(request, "rapports/liste_etudiants.html", {"etudiants": etudiants, "departements": departements})
+
+
+@login_required
+def liste_personnel(request):
+    if request.user.a_acces_global:
+        personnel = Utilisateur.objects.exclude(role=Utilisateur.Role.ETUDIANT)
+    else:
+        personnel = Utilisateur.objects.filter(departement__in=request.user.departements_geres()).exclude(role=Utilisateur.Role.ETUDIANT)
+    enregistrer_activite(request.user, "IMPRESSION", "Rapport", details="Liste du personnel")
+    return render(request, "rapports/liste_personnel.html", {"personnel": personnel.order_by("role", "last_name")})
+
+
+@login_required
+def performance_cours(request, cours_id):
+    u = request.user
+    cours = get_object_or_404(Cours, pk=cours_id)
+    if u.role == "PROFESSEUR" and cours not in u.cours_enseignes.all():
+        messages.error(request, "Vous n'enseignez pas ce cours.")
+        return redirect("comptes:tableau_bord")
+
+    notes = list(cours.notes.select_related("etudiant").all())
+    moyenne = round(sum(n.valeur for n in notes) / len(notes), 2) if notes else None
+    tranches = {"0-9": 0, "10-11": 0, "12-13": 0, "14-15": 0, "16-20": 0}
+    for n in notes:
+        v = float(n.valeur)
+        if v < 10:
+            tranches["0-9"] += 1
+        elif v < 12:
+            tranches["10-11"] += 1
+        elif v < 14:
+            tranches["12-13"] += 1
+        elif v < 16:
+            tranches["14-15"] += 1
+        else:
+            tranches["16-20"] += 1
+
+    enregistrer_activite(u, "IMPRESSION", "Rapport", details=f"Performance — {cours}")
+    return render(request, "rapports/performance_cours.html", {
+        "cours": cours, "notes": notes, "moyenne": moyenne, "tranches": tranches,
+    })
