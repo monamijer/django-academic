@@ -1,6 +1,5 @@
 """
-Paramètres du projet UNIVERSITE — Gestion des étudiants et du personnel
-(directeur académique, doyen, chef de département, professeur, secrétaire).
+Project settings and university management (Dean, Departement Chef, Professors, Staff, Students,...).
 """
 
 from pathlib import Path
