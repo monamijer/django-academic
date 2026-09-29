@@ -5,24 +5,23 @@
 <div class="row g-3">
   <div class="col-md-4">
     <div class="panel h-100" style="padding:1.25rem;">
-      <h5><i class="bi bi-arrow-left-right" style="color:var(--ok);"></i> Entrées / Sorties</h5>
-      <p style="color:var(--muted); font-size:.88rem;">Mouvements de stock sur une période, prêt à imprimer.</p>
-      <a href="{% url 'rapports:rapport_mouvements' %}?jours=7" class="btn btn-sm btn-outline-brand btn-icon mb-1"><i class="bi bi-calendar-week"></i> 7 derniers jours</a>
-      <a href="{% url 'rapports:rapport_mouvements' %}?jours=30" class="btn btn-sm btn-outline-brand btn-icon"><i class="bi bi-calendar-month"></i> 30 derniers jours</a>
+      <h5><i class="bi bi-people" style="color:var(--ok);"></i> Liste des étudiants</h5>
+      <p style="color:var(--muted); font-size:.88rem;">Étudiants de votre périmètre, groupés par filière.</p>
+      <a href="{% url 'rapports:liste_etudiants_departement' %}" class="btn btn-sm btn-outline-brand btn-icon"><i class="bi bi-file-earmark-text"></i> Générer</a>
     </div>
   </div>
   <div class="col-md-4">
     <div class="panel h-100" style="padding:1.25rem;">
-      <h5><i class="bi bi-calendar-x" style="color:var(--bad);"></i> Péremption</h5>
-      <p style="color:var(--muted); font-size:.88rem;">Produits périmés et bientôt périmés.</p>
-      <a href="{% url 'rapports:rapport_peremption' %}" class="btn btn-sm btn-outline-brand btn-icon"><i class="bi bi-file-earmark-text"></i> Générer</a>
+      <h5><i class="bi bi-person-badge" style="color:var(--brand-dark);"></i> Liste du personnel</h5>
+      <p style="color:var(--muted); font-size:.88rem;">Personnel de votre périmètre, par rôle.</p>
+      <a href="{% url 'rapports:liste_personnel' %}" class="btn btn-sm btn-outline-brand btn-icon"><i class="bi bi-file-earmark-text"></i> Générer</a>
     </div>
   </div>
   <div class="col-md-4">
     <div class="panel h-100" style="padding:1.25rem;">
-      <h5><i class="bi bi-clipboard-data" style="color:var(--violet);"></i> État du stock</h5>
-      <p style="color:var(--muted); font-size:.88rem;">Quantités actuelles et valeur totale du stock.</p>
-      <a href="{% url 'rapports:rapport_stock' %}" class="btn btn-sm btn-outline-brand btn-icon"><i class="bi bi-file-earmark-text"></i> Générer</a>
+      <h5><i class="bi bi-mortarboard" style="color:var(--bad);"></i> Relevé de notes</h5>
+      <p style="color:var(--muted); font-size:.88rem;">Depuis la fiche d'un étudiant précis.</p>
+      <a href="{% url 'etudiants:liste_etudiants' %}" class="btn btn-sm btn-outline-brand btn-icon"><i class="bi bi-search"></i> Trouver un étudiant</a>
     </div>
   </div>
 </div>
