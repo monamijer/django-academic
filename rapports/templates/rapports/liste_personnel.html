@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block titre %}Liste du personnel{% endblock %}
+{% block contenu %}
+<div class="page-head no-print">
+  <div><h1>Liste du personnel</h1><div class="subtitle">{{ personnel.count }} membre{{ personnel.count|pluralize }}</div></div>
+  <button onclick="window.print()" class="btn btn-brand btn-icon"><i class="bi bi-printer"></i> Imprimer</button>
+</div>
+<div class="text-center d-none d-print-block mb-3"><h2>UNIVPILOT — Liste du personnel</h2></div>
+<div class="panel table-panel">
+  <table class="table table-striped mb-0">
+    <thead><tr><th>Nom</th><th>Rôle</th><th>Faculté / Département</th><th>Email</th></tr></thead>
+    <tbody>
+    {% for p in personnel %}
+    <tr><td>{{ p.get_full_name|default:p.username }}</td><td>{{ p.get_role_display }}</td>
+      <td>{{ p.faculte|default:"" }}{{ p.departement|default:"" }}{% if not p.faculte and not p.departement %}—{% endif %}</td>
+      <td>{{ p.email|default:"—" }}</td></tr>
+    {% empty %}<tr><td colspan="4" class="text-center" style="color:var(--muted); padding:2rem;">Aucun membre.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
