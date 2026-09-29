@@ -80,3 +80,78 @@ class Cours(models.Model):
     @property
     def places_restantes(self):
         return max(self.capacite_max - self.inscriptions.count(), 0)
+
+
+class Seance(models.Model):
+    """Créneau hebdomadaire d'un cours (jour, heure de début et de fin, salle).
+    Alimente l'emploi du temps de l'étudiant et du professeur."""
+
+    class Jour(models.IntegerChoices):
+        LUNDI = 0, "Lundi"
+        MARDI = 1, "Mardi"
+        MERCREDI = 2, "Mercredi"
+        JEUDI = 3, "Jeudi"
+        VENDREDI = 4, "Vendredi"
+        SAMEDI = 5, "Samedi"
+
+    cours = models.ForeignKey(Cours, on_delete=models.CASCADE, related_name="seances")
+    jour = models.PositiveSmallIntegerField(choices=Jour.choices)
+    heure_debut = models.TimeField()
+    heure_fin = models.TimeField()
+    salle = models.CharField(max_length=40, blank=True)
+
+    class Meta:
+        ordering = ["jour", "heure_debut"]
+
+    def __str__(self):
+        return f"{self.cours.code} — {self.get_jour_display()} {self.heure_debut:%H:%M}-{self.heure_fin:%H:%M}"
+
+
+class Seance(models.Model):
+    """Créneau hebdomadaire d'un cours (jour, heure de début et de fin, salle).
+    Alimente l'emploi du temps de l'étudiant et du professeur."""
+
+    class Jour(models.IntegerChoices):
+        LUNDI = 0, "Lundi"
+        MARDI = 1, "Mardi"
+        MERCREDI = 2, "Mercredi"
+        JEUDI = 3, "Jeudi"
+        VENDREDI = 4, "Vendredi"
+        SAMEDI = 5, "Samedi"
+
+    cours = models.ForeignKey(Cours, on_delete=models.CASCADE, related_name="seances")
+    jour = models.PositiveSmallIntegerField(choices=Jour.choices)
+    heure_debut = models.TimeField()
+    heure_fin = models.TimeField()
+    salle = models.CharField(max_length=40, blank=True)
+
+    class Meta:
+        ordering = ["jour", "heure_debut"]
+
+    def __str__(self):
+        return f"{self.cours.code} — {self.get_jour_display()} {self.heure_debut:%H:%M}-{self.heure_fin:%H:%M}"
+
+
+class Seance(models.Model):
+    """Créneau hebdomadaire d'un cours (jour, heure de début et de fin, salle).
+    Alimente l'emploi du temps de l'étudiant et du professeur."""
+
+    class Jour(models.IntegerChoices):
+        LUNDI = 0, "Lundi"
+        MARDI = 1, "Mardi"
+        MERCREDI = 2, "Mercredi"
+        JEUDI = 3, "Jeudi"
+        VENDREDI = 4, "Vendredi"
+        SAMEDI = 5, "Samedi"
+
+    cours = models.ForeignKey(Cours, on_delete=models.CASCADE, related_name="seances")
+    jour = models.PositiveSmallIntegerField(choices=Jour.choices)
+    heure_debut = models.TimeField()
+    heure_fin = models.TimeField()
+    salle = models.CharField(max_length=40, blank=True)
+
+    class Meta:
+        ordering = ["jour", "heure_debut"]
+
+    def __str__(self):
+        return f"{self.cours.code} — {self.get_jour_display()} {self.heure_debut:%H:%M}-{self.heure_fin:%H:%M}"

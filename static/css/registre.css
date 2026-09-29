@@ -1,0 +1,284 @@
+/* ==========================================================================
+   REGISTRE — système visuel d'UNIVPILOT (direction « Swiss Registrar »)
+   Papier, encre, un seul accent. Grille visible, aucun arrondi, aucune ombre.
+   ========================================================================== */
+
+:root {
+  --paper: #F4F1EA;
+  --paper-deep: #EAE6DC;
+  --ink: #1A1815;
+  --ink-soft: #4A443C;
+  --ink-mute: #7C7568;
+  --rule: #C9C2B2;
+  --accent: #C8381D;
+  --accent-ink: #FFFFFF;
+
+  --font-display: 'Fraunces', 'Instrument Serif', Georgia, serif;
+  --font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+  --font-body: 'Inter Tight', 'Söhne', system-ui, sans-serif;
+
+  --space-unit: 8px;
+  --rule-width: 1px;
+  --radius: 0;
+
+  /* Curseur : réticule fin, point vermillon au centre. */
+  --cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='25' viewBox='0 0 25 25'%3E%3Cpath d='M12.5 1v9M12.5 15v9M1 12.5h9M15 12.5h9' stroke='%231A1815' stroke-width='1' fill='none'/%3E%3Ccircle cx='12.5' cy='12.5' r='1.6' fill='%23C8381D'/%3E%3C/svg%3E") 12 12, crosshair;
+}
+
+*, *::before, *::after { box-sizing: border-box; border-radius: var(--radius); }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body.registre {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.45;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  cursor: var(--cursor);
+  -webkit-font-smoothing: antialiased;
+}
+body.registre a, body.registre button { cursor: var(--cursor); }
+
+::selection { background: var(--ink); color: var(--paper); }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+.mono { font-family: var(--font-mono); }
+
+/* ---------- Liens : soulignement qui se dessine au survol ---------- */
+.lien {
+  color: inherit; text-decoration: none;
+  background: linear-gradient(var(--accent), var(--accent)) 0 100% / 0 1px no-repeat;
+  padding-bottom: 2px;
+  transition: background-size .35s cubic-bezier(.2, .7, .2, 1);
+}
+.lien:hover, .lien:focus-visible, .lien[aria-current="page"] { background-size: 100% 1px; }
+.lien:focus-visible { outline: 1px solid var(--ink); outline-offset: 3px; }
+
+/* ---------- Frontispice ---------- */
+.frontispice {
+  max-width: 1320px; margin: 0 auto;
+  padding: calc(var(--space-unit) * 3) calc(var(--space-unit) * 4) 0;
+}
+.frontispice__ligne {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  gap: calc(var(--space-unit) * 3); flex-wrap: wrap;
+  padding-bottom: calc(var(--space-unit) * 1.5);
+}
+.marque {
+  font-family: var(--font-display); font-weight: 600; font-size: 1.7rem;
+  line-height: 1; letter-spacing: -.02em; text-decoration: none; color: var(--ink);
+}
+.marque small {
+  display: block; margin-top: 6px;
+  font-family: var(--font-mono); font-weight: 400; font-size: .68rem;
+  letter-spacing: 0; color: var(--ink-mute);
+}
+.frontispice__date {
+  font-family: var(--font-mono); font-size: .72rem; color: var(--ink-soft); text-align: right;
+}
+
+.nav-registre {
+  display: flex; align-items: center; flex-wrap: wrap;
+  border-top: var(--rule-width) solid var(--ink);
+  border-bottom: var(--rule-width) solid var(--rule);
+  font-family: var(--font-mono); font-size: .76rem;
+}
+.nav-registre > * { padding: 9px 0; margin-right: calc(var(--space-unit) * 3); }
+.nav-registre .nav-fin { margin-left: auto; margin-right: 0; display: flex; gap: calc(var(--space-unit) * 3); align-items: center; }
+.nav-registre form { margin: 0; }
+.nav-registre button {
+  font: inherit; color: inherit; background: none; border: 0; padding: 0;
+}
+
+.avis {
+  font-family: var(--font-mono); font-size: .78rem;
+  padding: 10px 0; border-bottom: var(--rule-width) solid var(--rule); margin: 0;
+}
+.avis::before { content: "■ "; color: var(--accent); }
+
+/* ---------- Feuille : trois colonnes, filets durs ---------- */
+.feuille { max-width: 1320px; margin: 0 auto; padding: 0 calc(var(--space-unit) * 4) calc(var(--space-unit) * 6); }
+
+.folio {
+  display: grid;
+  grid-template-columns: minmax(230px, 290px) minmax(0, 1fr) minmax(290px, 350px);
+  border-bottom: var(--rule-width) solid var(--ink);
+}
+.colonne { padding: calc(var(--space-unit) * 3) calc(var(--space-unit) * 3) calc(var(--space-unit) * 4); min-width: 0; }
+.colonne:first-child { padding-left: 0; }
+.colonne:last-child { padding-right: 0; }
+.colonne + .colonne { border-left: var(--rule-width) solid var(--ink); }
+
+/* Rubrique : numéro en mono, titre en serif, filet qui se trace. */
+.rubrique {
+  position: relative; display: flex; align-items: baseline; gap: 12px;
+  margin: 0 0 calc(var(--space-unit) * 3); padding-bottom: 10px;
+}
+.rubrique::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+  background: var(--ink); transform-origin: left;
+  animation: trace .9s cubic-bezier(.2, .7, .2, 1) both;
+}
+.rubrique__no { font-family: var(--font-mono); font-size: .7rem; color: var(--ink-mute); }
+.rubrique__titre {
+  margin: 0; font-family: var(--font-display); font-weight: 500;
+  font-size: 1.05rem; font-style: italic; letter-spacing: 0;
+}
+@keyframes trace { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* ---------- 01 Identité ---------- */
+.portrait {
+  position: relative; aspect-ratio: 3 / 4; width: 100%;
+  border: var(--rule-width) solid var(--ink);
+  background:
+    repeating-linear-gradient(135deg, transparent 0 7px, var(--rule) 7px 8px),
+    var(--paper-deep);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: calc(var(--space-unit) * 1);
+  filter: grayscale(1);
+}
+.portrait__initiales {
+  font-family: var(--font-display); font-style: italic; font-weight: 300;
+  font-size: 4.5rem; letter-spacing: -.04em; color: var(--ink);
+  background: var(--paper); padding: 0 14px; line-height: 1.15;
+  border: var(--rule-width) solid var(--ink);
+}
+.portrait img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.05); }
+.legende { font-family: var(--font-mono); font-size: .64rem; color: var(--ink-mute); margin: 0 0 calc(var(--space-unit) * 3); }
+
+.nom {
+  margin: 0; font-family: var(--font-display); font-weight: 600;
+  font-size: clamp(2.3rem, 3.3vw, 3.2rem); line-height: .95; letter-spacing: -.03em;
+  overflow-wrap: anywhere;
+}
+.nom em { display: block; font-weight: 300; font-style: italic; letter-spacing: -.02em; }
+.matricule {
+  display: inline-block; margin: calc(var(--space-unit) * 2) 0 calc(var(--space-unit) * 3);
+  font-family: var(--font-mono); font-size: .9rem; font-weight: 500;
+  border-top: var(--rule-width) solid var(--ink); border-bottom: var(--rule-width) solid var(--ink);
+  padding: 4px 0; letter-spacing: .02em;
+}
+
+.registre-liste { margin: 0; }
+.registre-liste div {
+  display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 12px;
+  padding: 8px 0; border-top: var(--rule-width) solid var(--rule);
+}
+.registre-liste div:last-child { border-bottom: var(--rule-width) solid var(--rule); }
+.registre-liste dt { font-family: var(--font-mono); font-size: .68rem; color: var(--ink-mute); padding-top: 3px; }
+.registre-liste dd { margin: 0; font-size: .9rem; overflow-wrap: anywhere; }
+
+/* ---------- 02 Semaine ---------- */
+.jour { border-top: var(--rule-width) solid var(--rule); padding: 0; }
+.jour:first-of-type { border-top: var(--rule-width) solid var(--ink); }
+.jour__entete {
+  display: flex; align-items: baseline; gap: 12px; padding: 10px 0 6px;
+}
+.jour__nom { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 1.25rem; letter-spacing: -.01em; }
+.jour__date { font-family: var(--font-mono); font-size: .72rem; color: var(--ink-mute); }
+.jour__marque {
+  margin-left: auto; font-family: var(--font-mono); font-size: .66rem; color: var(--accent);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.jour__marque::before { content: ""; width: 7px; height: 7px; background: var(--accent); display: inline-block; }
+.jour--aujourdhui .jour__nom { text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; text-underline-offset: 5px; }
+
+.creneau {
+  display: grid; grid-template-columns: 112px minmax(0, 1fr) auto; gap: 0 16px; align-items: baseline;
+  padding: 9px 0 11px;
+}
+.creneau__heures {
+  font-family: var(--font-mono); font-size: .82rem; font-weight: 500;
+  border-right: var(--rule-width) solid var(--ink); padding-right: 12px; line-height: 1.5;
+}
+.creneau__cours { font-family: var(--font-display); font-size: 1.12rem; line-height: 1.2; font-weight: 500; }
+.creneau__code { display: block; font-family: var(--font-mono); font-size: .68rem; color: var(--ink-mute); margin-top: 2px; }
+.creneau__salle { font-family: var(--font-mono); font-size: .76rem; color: var(--ink-soft); white-space: nowrap; }
+.jour__vide { margin: 0; padding: 2px 0 12px; font-family: var(--font-display); font-style: italic; color: var(--ink-mute); font-size: .95rem; }
+
+/* ---------- 03 Relevé ---------- */
+.moyenne { margin: 0; line-height: 1; display: flex; align-items: flex-end; gap: 8px; }
+.moyenne__val {
+  font-family: var(--font-display); font-weight: 300;
+  font-size: clamp(4.6rem, 7.2vw, 6.6rem); letter-spacing: -.05em; line-height: 1;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.moyenne__sur { font-family: var(--font-mono); font-size: .9rem; color: var(--ink-mute); padding-bottom: .55em; }
+.mention { margin: 6px 0 calc(var(--space-unit) * 3); font-family: var(--font-display); font-style: italic; font-size: 1.35rem; }
+.mention small { font-family: var(--font-mono); font-style: normal; font-size: .68rem; color: var(--ink-mute); margin-left: 8px; }
+
+/* Odomètre : chaque chiffre roule jusqu'à sa valeur. */
+.od { display: inline-flex; height: 1em; overflow: hidden; vertical-align: bottom; }
+.od__chiffre { display: inline-block; height: 1em; overflow: hidden; }
+.od__bande { display: flex; flex-direction: column; transition: transform 1.4s cubic-bezier(.16, .84, .24, 1); will-change: transform; }
+.od__bande span { display: block; height: 1em; line-height: 1; text-align: center; }
+.od__sep { display: inline-block; height: 1em; line-height: 1; }
+
+.notes { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.notes caption { text-align: left; }
+.notes th {
+  font-family: var(--font-mono); font-weight: 400; font-size: .64rem; color: var(--ink-mute);
+  text-align: left; padding: 0 0 6px; border-bottom: var(--rule-width) solid var(--ink);
+}
+.notes td { padding: 7px 0; vertical-align: baseline; border: 0; }
+.notes .c-code { font-family: var(--font-mono); font-size: .72rem; color: var(--ink-soft); width: 76px; }
+.notes .c-cours { padding-right: 12px; }
+.notes .c-note, .notes th.c-note { text-align: right; font-family: var(--font-mono); font-size: .95rem; font-weight: 500; white-space: nowrap; }
+.notes th.c-note { font-weight: 400; font-size: .64rem; }
+.notes .c-note--basse { color: var(--accent); }
+.notes tbody tr:last-child td { padding-bottom: 10px; }
+.notes tfoot td { border-top: var(--rule-width) solid var(--ink); padding-top: 8px; font-family: var(--font-mono); font-size: .66rem; color: var(--ink-soft); }
+.notes__vide { font-family: var(--font-display); font-style: italic; color: var(--ink-mute); padding: 10px 0; margin: 0; }
+
+.pied { max-width: 1320px; margin: 0 auto; padding: 0 calc(var(--space-unit) * 4) calc(var(--space-unit) * 4); font-family: var(--font-mono); font-size: .66rem; color: var(--ink-mute); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+/* ---------- Petits écrans : la feuille se lit en une colonne ---------- */
+@media (max-width: 1040px) {
+  .folio { grid-template-columns: 1fr; }
+  .colonne, .colonne:first-child, .colonne:last-child { padding-left: 0; padding-right: 0; }
+  .colonne + .colonne { border-left: 0; border-top: var(--rule-width) solid var(--ink); }
+  .frontispice, .feuille, .pied { padding-left: calc(var(--space-unit) * 2); padding-right: calc(var(--space-unit) * 2); }
+  .portrait { max-width: 220px; }
+}
+@media (max-width: 560px) {
+  .creneau { grid-template-columns: 96px minmax(0, 1fr); }
+  .creneau__salle { grid-column: 2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rubrique::after { animation: none; }
+  .od__bande { transition: none; }
+  .lien { transition: none; }
+}
+
+/* ---------- Impression A4, noir et blanc ---------- */
+@page { size: A4; margin: 14mm; }
+@media print {
+  :root { --paper: #fff; --paper-deep: #fff; --accent: #000; --ink-mute: #444; --rule: #999; }
+  html, body.registre { background: #fff; color: #000; cursor: auto; font-size: 10pt; }
+  .nav-registre, .avis, .pied, .sr-only-print { display: none !important; }
+  .frontispice, .feuille { max-width: none; padding: 0; }
+  .frontispice { padding-bottom: 6mm; }
+  .folio { grid-template-columns: 62mm 1fr; grid-template-areas: "id notes" "semaine semaine"; border-bottom: 1px solid #000; }
+  .col-identite { grid-area: id; }
+  .col-notes { grid-area: notes; }
+  .col-semaine { grid-area: semaine; border-left: 0; border-top: 1px solid #000; }
+  .colonne { padding: 4mm 4mm 5mm; }
+  .colonne:first-child { padding-left: 0; }
+  .col-notes { border-left: 1px solid #000; padding-right: 0; }
+  .portrait { filter: none; background: repeating-linear-gradient(135deg, transparent 0 7px, #bbb 7px 8px); }
+  .rubrique::after { animation: none; }
+  .moyenne__val { font-size: 46pt; }
+  .jour__marque { color: #000; font-weight: 700; }
+  .jour__marque::before { background: #000; }
+  .jour--aujourdhui .jour__nom { text-decoration-color: #000; }
+  .notes .c-note--basse { color: #000; font-weight: 700; text-decoration: underline; }
+  .jour, .creneau, .notes tr { break-inside: avoid; }
+}

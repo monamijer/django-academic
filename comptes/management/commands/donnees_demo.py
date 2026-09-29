@@ -1,7 +1,9 @@
 from django.core.management.base import BaseCommand
 from django.core.management import call_command
 
-from academique.models import AnneeAcademique, Cours, Departement, Faculte, Filiere
+from datetime import time
+
+from academique.models import AnneeAcademique, Cours, Departement, Faculte, Filiere, Seance
 from comptes.models import Utilisateur
 from etudiants.models import Etudiant, Inscription, Note
 
@@ -12,6 +14,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         call_command("configurer_roles")
 
+        # --- Structure académique ---
         annee, _ = AnneeAcademique.objects.get_or_create(libelle="2025-2026", defaults={"est_courante": True})
 
         fac_sciences, _ = Faculte.objects.get_or_create(nom="Faculté des Sciences", code="FSC", defaults={"couleur": "#16233F"})
@@ -24,6 +27,7 @@ class Command(BaseCommand):
         fil_info, _ = Filiere.objects.get_or_create(departement=dep_info, nom="Licence Informatique", code="L-INFO", duree_annees=3)
         fil_lettres, _ = Filiere.objects.get_or_create(departement=dep_lettres, nom="Licence Lettres", code="L-LET", duree_annees=3)
 
+        # --- Comptes : un par rôle ---
         comptes_demo = [
             dict(username="admin", role=Utilisateur.Role.ADMIN_SYSTEME, first_name="Alice", last_name="Système",
                  password="AdminUniv2026!", superuser=True),
@@ -73,6 +77,7 @@ class Command(BaseCommand):
 
         professeur = utilisateurs["professeur"]
 
+        # --- Cours, rattaché au professeur de démonstration ---
         cours_algo, _ = Cours.objects.get_or_create(
             departement=dep_info, nom="Algorithmique", code="INFO-101",
             defaults={"credits": 5, "capacite_max": 40},
@@ -84,6 +89,17 @@ class Command(BaseCommand):
         )
         cours_bd.professeurs.add(professeur)
 
+        creneaux = [
+            (cours_algo, Seance.Jour.LUNDI, time(8, 0), time(10, 0), "B12"),
+            (cours_algo, Seance.Jour.JEUDI, time(10, 15), time(12, 15), "B12"),
+            (cours_bd, Seance.Jour.MARDI, time(14, 0), time(17, 0), "Labo 3"),
+            (cours_bd, Seance.Jour.VENDREDI, time(8, 0), time(10, 0), "A04"),
+        ]
+        for cours, jour, debut, fin, salle in creneaux:
+            Seance.objects.get_or_create(cours=cours, jour=jour, heure_debut=debut,
+                                         defaults={"heure_fin": fin, "salle": salle})
+
+        # --- Étudiants de démonstration ---
         etudiants_demo = [
             ("etudiant1", "Grace", "Iradukunda", "MAT-2024-001", fil_info, 2024, [(cours_algo, 15.5), (cours_bd, 9.0)]),
             ("etudiant2", "Hervé", "Ntahonkiriye", "MAT-2024-002", fil_info, 2024, [(cours_algo, 12.0)]),

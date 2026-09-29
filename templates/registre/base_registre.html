@@ -1,0 +1,54 @@
+{% load static %}<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>{% block titre %}Registre{% endblock %} — UNIVPILOT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/registre.css' %}">
+</head>
+<body class="registre">
+
+<header class="frontispice">
+  <div class="frontispice__ligne">
+    <a class="marque" href="{% url 'comptes:tableau_bord' %}">Univpilot
+      <small>registre académique{% block annee %}{% endblock %}</small>
+    </a>
+    <div class="frontispice__date">
+      folio n° {{ user.pk|stringformat:"03d" }}<br>
+      {% now "l j F Y" %}
+    </div>
+  </div>
+  <nav class="nav-registre" aria-label="Navigation principale">
+    {% block navigation %}
+    <a class="lien" href="{% url 'comptes:tableau_bord' %}"{% if request.resolver_match.url_name == 'tableau_bord' %} aria-current="page"{% endif %}>Tableau</a>
+    {% if user.role == 'ETUDIANT' %}
+    <a class="lien" href="{% url 'rapports:mon_releve' %}">Mon relevé</a>
+    {% endif %}
+    {% endblock %}
+    <span class="nav-fin">
+      <a class="lien" href="{% url 'comptes:mon_profil' %}">Profil</a>
+      <form method="post" action="{% url 'comptes:deconnexion' %}">
+        {% csrf_token %}
+        <button type="submit" class="lien">Quitter</button>
+      </form>
+    </span>
+  </nav>
+  {% for message in messages %}<p class="avis" role="status">{{ message }}</p>{% endfor %}
+</header>
+
+<main class="feuille">
+  {% block contenu %}{% endblock %}
+</main>
+
+<footer class="pied">
+  <span>univpilot · gestion universitaire</span>
+  <span>document généré le {% now "d.m.Y à H:i" %}</span>
+</footer>
+
+<script src="{% static 'js/registre.js' %}" defer></script>
+</body>
+</html>

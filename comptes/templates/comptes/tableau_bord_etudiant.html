@@ -1,33 +1,99 @@
-{% extends "base.html" %}
-{% block titre %}Tableau de bord{% endblock %}
+{% extends "registre/base_registre.html" %}
+{% block titre %}Relevé de {{ user.get_full_name|default:user.username }}{% endblock %}
+{% block annee %}{% if annee %} · année {{ annee.libelle }}{% endif %}{% endblock %}
+
 {% block contenu %}
-<div class="hero-banner">
-  <h1>Bonjour {{ user.first_name|default:user.username }}</h1>
-  <div class="subtitle">{{ fiche.filiere }} — Promotion {{ fiche.promotion }} · Matricule {{ fiche.matricule }}</div>
-  <div class="hero-meta">
-    <div class="item"><strong>{{ moyenne|default:"—" }}{% if moyenne %}/20{% endif %}</strong>Moyenne générale</div>
-    <div class="item"><strong>{{ mention }}</strong>Mention</div>
-    <div class="item"><strong>{{ notes|length }}</strong>Notes enregistrées</div>
-  </div>
-</div>
+{% if not fiche %}
+  <p class="notes__vide" style="padding:48px 0;">Aucune fiche étudiant n'est rattachée à ce compte. Adressez-vous au secrétariat.</p>
+{% else %}
+<div class="folio">
 
-<h6 style="color:var(--muted); text-transform:uppercase; font-size:.75rem; letter-spacing:.05em; margin-bottom:.75rem; font-family:'Work Sans',sans-serif;">Accès rapide</h6>
-<div class="quick-tile-grid mb-4">
-  <a href="{% url 'rapports:mon_releve' %}" class="quick-tile"><span class="tile-icon" style="background:#0d6efd;"><i class="bi bi-printer"></i></span><span class="tile-label">Mon relevé</span><span class="tile-sub">Imprimer</span></a>
-  <a href="{% url 'comptes:mon_profil' %}" class="quick-tile"><span class="tile-icon" style="background:#5B4B8A;"><i class="bi bi-person-gear"></i></span><span class="tile-label">Mon profil</span><span class="tile-sub">Modifier</span></a>
-</div>
+  {# ─── 01 · IDENTITÉ ─────────────────────────────────────────── #}
+  <section class="colonne col-identite" aria-labelledby="r-identite">
+    <header class="rubrique"><span class="rubrique__no">01</span><h2 class="rubrique__titre" id="r-identite">Identité</h2></header>
 
-<div class="panel">
-  <div class="panel-head"><i class="bi bi-journal-check"></i> Mes notes</div>
-  <div class="table-panel">
-    <table class="table mb-0">
-      <thead><tr><th>Cours</th><th>Année académique</th><th>Note</th></tr></thead>
+    <div class="portrait" role="img" aria-label="Emplacement de la photo d'identité">
+      <span class="portrait__initiales">{{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}</span>
+    </div>
+    <p class="legende">photo d'identité · non fournie</p>
+
+    <h1 class="nom"><em>{{ user.first_name|default:user.username }}</em>{{ user.last_name }}</h1>
+    <span class="matricule">{{ fiche.matricule }}</span>
+
+    <dl class="registre-liste">
+      <div><dt>filière</dt><dd>{{ fiche.filiere.nom }}</dd></div>
+      <div><dt>département</dt><dd>{{ fiche.filiere.departement.nom }}</dd></div>
+      <div><dt>faculté</dt><dd>{{ fiche.filiere.departement.faculte.nom }}</dd></div>
+      <div><dt>promotion</dt><dd class="mono">{{ fiche.promotion }}</dd></div>
+      <div><dt>contact</dt><dd>{{ user.email|default:"—" }}</dd></div>
+    </dl>
+  </section>
+
+  {# ─── 02 · SEMAINE ──────────────────────────────────────────── #}
+  <section class="colonne col-semaine" aria-labelledby="r-semaine">
+    <header class="rubrique">
+      <span class="rubrique__no">02</span>
+      <h2 class="rubrique__titre" id="r-semaine">Semaine du {{ semaine.0.date|date:"j F" }}</h2>
+      <span class="rubrique__no" style="margin-left:auto;">{{ nb_seances }} séance{{ nb_seances|pluralize }}</span>
+    </header>
+
+    {% for jour in semaine %}
+    <article class="jour{% if jour.est_aujourdhui %} jour--aujourdhui{% endif %}">
+      <div class="jour__entete">
+        <h3 class="jour__nom">{{ jour.libelle }}</h3>
+        <span class="jour__date">{{ jour.date|date:"d.m" }}</span>
+        {% if jour.est_aujourdhui %}<span class="jour__marque">aujourd'hui</span>{% endif %}
+      </div>
+      {% for s in jour.seances %}
+      <div class="creneau">
+        <span class="creneau__heures">{{ s.heure_debut|time:"H:i" }}<br>{{ s.heure_fin|time:"H:i" }}</span>
+        <span class="creneau__cours">{{ s.cours.nom }}<span class="creneau__code">{{ s.cours.code }}</span></span>
+        <span class="creneau__salle">{{ s.salle|default:"—" }}</span>
+      </div>
+      {% empty %}
+      <p class="jour__vide">Aucune séance.</p>
+      {% endfor %}
+    </article>
+    {% endfor %}
+  </section>
+
+  {# ─── 03 · RELEVÉ ───────────────────────────────────────────── #}
+  <section class="colonne col-notes" aria-labelledby="r-releve">
+    <header class="rubrique"><span class="rubrique__no">03</span><h2 class="rubrique__titre" id="r-releve">Relevé</h2></header>
+
+    {% if moyenne is not None %}
+    <p class="moyenne">
+      <span class="moyenne__val" data-odometer="{{ moyenne|floatformat:2 }}">{{ moyenne|floatformat:2 }}</span>
+      <span class="moyenne__sur">/20</span>
+    </p>
+    <p class="mention">{{ mention }}<small>moyenne générale · {{ notes|length }} note{{ notes|length|pluralize }}</small></p>
+    {% else %}
+    <p class="moyenne"><span class="moyenne__val">—</span></p>
+    <p class="mention">Aucune note<small>moyenne non calculable</small></p>
+    {% endif %}
+
+    {% if notes %}
+    <table class="notes">
+      <caption class="sr-only">Dernières notes enregistrées</caption>
+      <thead><tr><th class="c-code" scope="col">code</th><th scope="col">cours</th><th class="c-note" scope="col">note</th></tr></thead>
       <tbody>
-      {% for n in notes %}
-        <tr><td>{{ n.cours }}</td><td>{{ n.annee_academique }}</td><td><strong>{{ n.valeur }}</strong>/20</td></tr>
-      {% empty %}<tr><td colspan="3"><div class="empty-state"><i class="bi bi-journal"></i>Aucune note enregistrée.</div></td></tr>{% endfor %}
+        {% for n in notes %}
+        <tr>
+          <td class="c-code">{{ n.cours.code }}</td>
+          <td class="c-cours">{{ n.cours.nom }}</td>
+          <td class="c-note{% if n.insuffisante %} c-note--basse{% endif %}">{{ n.valeur|floatformat:2 }}{% if n.insuffisante %}<sup>†</sup>{% endif %}</td>
+        </tr>
+        {% endfor %}
       </tbody>
+      <tfoot><tr><td colspan="3">† inférieur à {{ seuil }} sur 20 · {{ notes|length }} dernière{{ notes|length|pluralize }} note{{ notes|length|pluralize }}</td></tr></tfoot>
     </table>
-  </div>
+    {% else %}
+    <p class="notes__vide">Aucune note enregistrée pour le moment.</p>
+    {% endif %}
+
+    <p style="margin:24px 0 0;"><a class="lien mono" style="font-size:.76rem;" href="{% url 'rapports:mon_releve' %}">imprimer le relevé officiel →</a></p>
+  </section>
+
 </div>
+{% endif %}
 {% endblock %}

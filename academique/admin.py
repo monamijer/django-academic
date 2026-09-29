@@ -27,3 +27,4 @@ class CoursAdmin(admin.ModelAdmin):
 @admin.register(AnneeAcademique)
 class AnneeAcademiqueAdmin(admin.ModelAdmin):
     list_display = ("libelle", "est_courante")
+

@@ -1,3 +1,4 @@
+from datetime import timedelta
 from functools import wraps
 
 from django.contrib import messages
@@ -5,9 +6,10 @@ from django.contrib.auth import update_session_auth_hash, views as auth_views
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.generic import ListView
 
-from academique.models import Cours, Departement, Faculte
+from academique.models import AnneeAcademique, Cours, Departement, Faculte, Seance
 from etudiants.models import Etudiant, Note
 
 from .forms import ChangerMotDePasseForm, ConnexionForm, ProfilForm, UtilisateurCreationForm, UtilisateurForm
@@ -40,6 +42,57 @@ class ConnexionView(auth_views.LoginView):
 
 class DeconnexionView(auth_views.LogoutView):
     next_page = "comptes:connexion"
+
+
+SEUIL_REUSSITE = 10
+JOURS_AFFICHES = 6  # lundi -> samedi
+
+
+def _contexte_etudiant(utilisateur):
+    """Données du tableau de bord étudiant : identité, semaine en cours
+    (séances des cours auxquels il est inscrit cette année) et dernières notes."""
+    fiche = getattr(utilisateur, "fiche_etudiant", None)
+    if fiche is None:
+        return {"fiche": None}
+
+    aujourdhui = timezone.localdate()
+    lundi = aujourdhui - timedelta(days=aujourdhui.weekday())
+    annee = AnneeAcademique.objects.filter(est_courante=True).first()
+
+    seances = Seance.objects.none()
+    if annee:
+        # Un seul filter() : les deux conditions portent sur la MEME inscription.
+        seances = (Seance.objects
+                   .filter(cours__inscriptions__etudiant=fiche,
+                           cours__inscriptions__annee_academique=annee)
+                   .select_related("cours").distinct())
+
+    semaine = []
+    for indice in range(JOURS_AFFICHES):
+        date_jour = lundi + timedelta(days=indice)
+        semaine.append({
+            "date": date_jour,
+            "libelle": Seance.Jour(indice).label,
+            "est_aujourdhui": date_jour == aujourdhui,
+            "seances": [s for s in seances if s.jour == indice],
+        })
+
+    notes = list(fiche.notes.select_related("cours", "annee_academique")
+                 .order_by("-date_evaluation")[:8])
+    for note in notes:
+        note.insuffisante = note.valeur < SEUIL_REUSSITE
+
+    return {
+        "fiche": fiche,
+        "annee": annee,
+        "aujourdhui": aujourdhui,
+        "semaine": semaine,
+        "nb_seances": sum(len(j["seances"]) for j in semaine),
+        "notes": notes,
+        "moyenne": fiche.moyenne_generale(),
+        "mention": fiche.mention(),
+        "seuil": SEUIL_REUSSITE,
+    }
 
 
 @login_required
@@ -100,13 +153,7 @@ def tableau_bord(request):
         template = "comptes/tableau_bord_secretaire.html"
 
     elif u.role == Utilisateur.Role.ETUDIANT:
-        fiche = getattr(u, "fiche_etudiant", None)
-        contexte.update({
-            "fiche": fiche,
-            "notes": fiche.notes.select_related("cours").all() if fiche else [],
-            "moyenne": fiche.moyenne_generale() if fiche else None,
-            "mention": fiche.mention() if fiche else "—",
-        })
+        contexte.update(_contexte_etudiant(u))
         template = "comptes/tableau_bord_etudiant.html"
 
     else:
@@ -143,7 +190,8 @@ def mon_profil(request):
     return render(request, "comptes/mon_profil.html", {"form": form, "mdp_form": mdp_form})
 
 
-@login_required
+# --- Gestion administrative des comptes (réservée à l'administrateur système) ---
+
 @exiger_admin_systeme
 def liste_utilisateurs(request):
     q = request.GET.get("q", "").strip()
