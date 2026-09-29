@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block titre %}Étudiants{% endblock %}
+{% block contenu %}
+<div class="page-head">
+  <div><h1>Étudiants</h1><div class="subtitle">{{ page_obj.paginator.count }} étudiant{{ page_obj.paginator.count|pluralize }}</div></div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'etudiants:liste_inscriptions' %}" class="btn btn-outline-brand btn-icon"><i class="bi bi-clipboard-check"></i> Inscriptions</a>
+    <a href="{% url 'etudiants:creer_etudiant' %}" class="btn btn-brand btn-icon"><i class="bi bi-person-plus"></i> Ajouter</a>
+  </div>
+</div>
+<form method="get" class="filter-bar no-print">
+  <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Matricule ou nom...">
+  <button class="btn btn-outline-brand btn-icon"><i class="bi bi-search"></i> Rechercher</button>
+</form>
+<div class="person-grid">
+  {% for e in page_obj %}
+  <a href="{% url 'etudiants:detail_etudiant' e.pk %}" class="person-card">
+    <div class="swatch" style="background:var(--brand);"></div>
+    <div class="body">
+      <span class="cat-tag">{{ e.filiere.nom }} — Promo {{ e.promotion }}</span>
+      <span class="name">{{ e.utilisateur.get_full_name|default:e.utilisateur.username }}</span>
+      <span class="ref">{{ e.matricule }}</span>
+      <div class="tags">
+        {% if not e.est_actif %}<span class="tag tag-muted">Inactif</span>{% endif %}
+        {% if e.en_difficulte %}<span class="tag tag-bad"><i class="bi bi-exclamation-triangle"></i> En difficulté</span>{% endif %}
+      </div>
+    </div>
+  </a>
+  {% empty %}<div class="panel" style="grid-column:1/-1; padding:2rem; text-align:center; color:var(--muted);">Aucun étudiant trouvé.</div>{% endfor %}
+</div>
+{% include "pagination.html" %}
+{% endblock %}

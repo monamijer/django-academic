@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block titre %}Cours{% endblock %}
+{% block contenu %}
+<div class="page-head">
+  <div><h1>Cours</h1><div class="subtitle">{{ page_obj.paginator.count }} cours</div></div>
+  {% if user.role != "PROFESSEUR" %}
+  <a href="{% url 'academique:creer_cours' %}" class="btn btn-brand btn-icon"><i class="bi bi-plus-lg"></i> Ajouter</a>
+  {% endif %}
+</div>
+<form method="get" class="filter-bar no-print">
+  <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Rechercher...">
+  <button class="btn btn-outline-brand btn-icon"><i class="bi bi-search"></i> Rechercher</button>
+</form>
+<div class="person-grid">
+  {% for c in page_obj %}
+  <div class="person-card">
+    <div class="swatch" style="background:var(--brand);"></div>
+    <div class="body">
+      <span class="cat-tag">{{ c.departement.nom }}</span>
+      <span class="name">{{ c.nom }}</span>
+      <span class="ref">{{ c.code }} — {{ c.credits }} crédits</span>
+      <span class="tag tag-muted">{{ c.inscriptions.count }}/{{ c.capacite_max }} inscrits</span>
+      {% if not c.est_actif %}<span class="tag tag-bad">Inactif</span>{% endif %}
+    </div>
+    {% if user.role != "PROFESSEUR" %}
+    <div class="footer-actions no-print">
+      <a href="{% url 'academique:modifier_cours' c.pk %}" class="icon-btn" title="Modifier"><i class="bi bi-pencil"></i></a>
+    </div>
+    {% endif %}
+  </div>
+  {% empty %}<div class="panel" style="grid-column:1/-1; padding:2rem; text-align:center; color:var(--muted);">Aucun cours.</div>{% endfor %}
+</div>
+{% include "pagination.html" %}
+{% endblock %}

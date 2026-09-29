@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block titre %}Filières{% endblock %}
+{% block contenu %}
+<div class="page-head">
+  <div><h1>Filières</h1><div class="subtitle">Programmes d'études</div></div>
+  <a href="{% url 'academique:creer_filiere' %}" class="btn btn-brand btn-icon"><i class="bi bi-plus-lg"></i> Ajouter</a>
+</div>
+<div class="panel table-panel">
+  <table class="table mb-0">
+    <thead><tr><th>Filière</th><th>Département</th><th>Durée</th><th>Statut</th><th class="no-print">Actions</th></tr></thead>
+    <tbody>
+      {% for f in filieres %}
+      <tr>
+        <td style="font-weight:600;">{{ f.nom }} <span class="ref" style="font-family:'JetBrains Mono',monospace; color:var(--muted);">({{ f.code }})</span></td>
+        <td>{{ f.departement }}</td>
+        <td>{{ f.duree_annees }} an{{ f.duree_annees|pluralize }}</td>
+        <td>{% if f.est_active %}<span class="tag tag-ok">Active</span>{% else %}<span class="tag tag-bad">Inactive</span>{% endif %}</td>
+        <td class="no-print"><a href="{% url 'academique:modifier_filiere' f.pk %}" class="icon-btn" title="Modifier"><i class="bi bi-pencil"></i></a></td>
+      </tr>
+      {% empty %}<tr><td colspan="5" class="text-center" style="color:var(--muted); padding:2rem;">Aucune filière.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block titre %}Départements{% endblock %}
+{% block contenu %}
+<div class="page-head">
+  <div><h1>Départements</h1><div class="subtitle">Selon votre périmètre</div></div>
+  <a href="{% url 'academique:creer_departement' %}" class="btn btn-brand btn-icon"><i class="bi bi-plus-lg"></i> Ajouter</a>
+</div>
+<div class="panel table-panel">
+  <table class="table mb-0">
+    <thead><tr><th>Département</th><th>Faculté</th><th>Statut</th><th class="no-print">Actions</th></tr></thead>
+    <tbody>
+      {% for d in departements %}
+      <tr>
+        <td style="font-weight:600;">{{ d.nom }} <span class="ref" style="font-family:'JetBrains Mono',monospace; color:var(--muted);">({{ d.code }})</span></td>
+        <td><span class="tag tag-muted">{{ d.faculte }}</span></td>
+        <td>{% if d.est_actif %}<span class="tag tag-ok">Actif</span>{% else %}<span class="tag tag-bad">Inactif</span>{% endif %}</td>
+        <td class="no-print"><a href="{% url 'academique:modifier_departement' d.pk %}" class="icon-btn" title="Modifier"><i class="bi bi-pencil"></i></a></td>
+      </tr>
+      {% empty %}<tr><td colspan="4" class="text-center" style="color:var(--muted); padding:2rem;">Aucun département.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
