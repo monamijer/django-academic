@@ -9,9 +9,17 @@
       <form method="post">
         {% csrf_token %}
         <input type="hidden" name="form" value="infos">
+        {% if user.fiche_etudiant %}
+        <div class="mb-3">
+          <label class="form-label">Matricule</label>
+          <input type="text" class="form-control" value="{{ user.fiche_etudiant.matricule }}" disabled>
+          <div class="form-text">Géré par l'administration — non modifiable ici.</div>
+        </div>
+        {% endif %}
         {% for field in form %}
           <div class="mb-3">
             <label class="form-label">{{ field.label }}</label>{{ field }}
+            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
             {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
           </div>
         {% endfor %}

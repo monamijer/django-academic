@@ -16,8 +16,10 @@ class ConnexionForm(AuthenticationForm):
 
 
 class ProfilForm(forms.ModelForm):
-    """Formulaire de libre-service : un utilisateur ne modifie que ses propres
-    informations personnelles, jamais son rôle ni son périmètre."""
+    """Formulaire de libre-service : un utilisateur ne modifie que son
+    téléphone, jamais son rôle, son périmètre, ni son identité officielle
+    (nom, prénom, email) — celle-ci reste gérée par l'administration/le
+    secrétariat, affichée ici en lecture seule pour référence."""
 
     class Meta:
         model = Utilisateur
@@ -29,6 +31,14 @@ class ProfilForm(forms.ModelForm):
             "telephone": forms.TextInput(attrs={"class": "form-control"}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # disabled=True (plutôt que readonly) : Django ignore toute valeur
+        # postée pour ces champs et garde systématiquement la valeur en base,
+        # même si quelqu'un retire l'attribut HTML depuis les outils du navigateur.
+        for champ in ("first_name", "last_name", "email"):
+            self.fields[champ].disabled = True
+            self.fields[champ].help_text = "Géré par l'administration — non modifiable ici."
 
 class ChangerMotDePasseForm(PasswordChangeForm):
     def __init__(self, *args, **kwargs):
