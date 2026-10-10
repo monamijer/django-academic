@@ -1,33 +1,60 @@
-{% extends "base.html" %}
-{% block titre %}Tableau de bord{% endblock %}
+{% extends "registre/base_registre.html" %}
+{% block titre %}Mon cahier — {{ user.get_full_name|default:user.username }}{% endblock %}
+
+{% block navigation %}
+<a class="lien" href="{% url 'comptes:tableau_bord' %}" aria-current="page">Tableau</a>
+<a class="lien" href="{% url 'rapports:centre_rapports' %}">Rapports</a>
+{% endblock %}
+
 {% block contenu %}
-<div class="hero-banner">
-  <h1>Bonjour {{ user.first_name|default:user.username }}</h1>
-  <div class="subtitle">{{ role_label }}</div>
-  <div class="hero-meta">
-    <div class="item"><strong>{{ cours.count }}</strong>Cours enseignés</div>
-    <div class="item"><strong>{{ nb_etudiants }}</strong>Étudiants inscrits</div>
-  </div>
-</div>
+<header class="rubrique">
+  <span class="rubrique__no">01</span>
+  <h2 class="rubrique__titre">Cours enseignés</h2>
+  <span class="rubrique__no" style="margin-left:auto;">{{ nb_cours }} cours · {{ nb_etudiants_total }} étudiant{{ nb_etudiants_total|pluralize }}</span>
+</header>
 
-<h6 style="color:var(--muted); text-transform:uppercase; font-size:.75rem; letter-spacing:.05em; margin-bottom:.75rem; font-family:'Work Sans',sans-serif;">Accès rapide</h6>
-<div class="quick-tile-grid mb-4">
-  <a href="{% url 'etudiants:mes_cours' %}" class="quick-tile"><span class="tile-icon" style="background:#2E7D4F;"><i class="bi bi-journal-bookmark"></i></span><span class="tile-label">Mes cours</span><span class="tile-sub">Enseignement</span></a>
-  <a href="{% url 'rapports:centre_rapports' %}" class="quick-tile"><span class="tile-icon" style="background:#0d6efd;"><i class="bi bi-printer"></i></span><span class="tile-label">Rapports</span><span class="tile-sub">Impressions</span></a>
-</div>
+<div class="cahier">
+  {% for ligne in lignes_cours %}
+  <details class="cours-ligne">
+    <summary>
+      <span class="cl-code">{{ ligne.cours.code }}</span>
+      <span class="cl-titre">
+        <span class="t">{{ ligne.cours.nom }}</span>
+        <span class="d">{{ ligne.cours.departement.nom }} · {{ ligne.cours.credits }} crédit{{ ligne.cours.credits|pluralize }}</span>
+      </span>
+      <span class="cl-actions">
+        <a class="lien" href="{% url 'etudiants:saisir_note' ligne.cours.pk %}">saisir une note →</a>
+        <a class="lien" href="{% url 'etudiants:notes_cours' ligne.cours.pk %}">voir les notes →</a>
+        <a class="lien" href="{% url 'rapports:performance_cours' ligne.cours.pk %}">performance →</a>
+      </span>
+      <span class="cl-nombre"><b data-odometer="{{ ligne.nb_inscrits }}">{{ ligne.nb_inscrits }}</b><span class="unite">inscrit{{ ligne.nb_inscrits|pluralize }}</span></span>
+      <span class="cl-chevron" aria-hidden="true">›</span>
+    </summary>
 
-<h6 style="color:var(--muted); text-transform:uppercase; font-size:.75rem; letter-spacing:.05em; margin-bottom:.75rem; font-family:'Work Sans',sans-serif;">Mes cours</h6>
-<div class="person-grid">
-  {% for c in cours %}
-  <a href="{% url 'etudiants:notes_cours' c.pk %}" class="person-card">
-    <div class="swatch" style="background:var(--brand);"></div>
-    <div class="body">
-      <span class="cat-tag">{{ c.departement.nom }}</span>
-      <span class="name">{{ c.nom }}</span>
-      <span class="ref">{{ c.code }} — {{ c.credits }} crédits</span>
-      <span class="tag tag-muted">{{ c.inscriptions.count }} inscrit{{ c.inscriptions.count|pluralize }}</span>
+    <div class="cl-corps">
+      {% if ligne.apercu %}
+      <table class="cl-apercu">
+        <thead><tr><th scope="col">matricule</th><th scope="col">étudiant</th></tr></thead>
+        <tbody>
+          {% for i in ligne.apercu %}
+          <tr>
+            <td class="m">{{ i.etudiant.matricule }}</td>
+            <td>{{ i.etudiant.utilisateur.get_full_name|default:i.etudiant.utilisateur.username }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% if ligne.nb_restants > 0 %}
+      <p class="cl-plus">+ {{ ligne.nb_restants }} autre{{ ligne.nb_restants|pluralize }} — <a class="lien" href="{% url 'etudiants:notes_cours' ligne.cours.pk %}">liste complète →</a></p>
+      {% endif %}
+      {% else %}
+      <p class="cl-vide">Aucun étudiant inscrit pour le moment.</p>
+      {% endif %}
+      <p class="cl-plus">{{ ligne.nb_notes }} note{{ ligne.nb_notes|pluralize }} saisie{{ ligne.nb_notes|pluralize }} sur {{ ligne.nb_inscrits }} inscrit{{ ligne.nb_inscrits|pluralize }}.</p>
     </div>
-  </a>
-  {% empty %}<div class="panel" style="grid-column:1/-1;"><div class="empty-state"><i class="bi bi-journal-x"></i>Aucun cours assigné.</div></div>{% endfor %}
+  </details>
+  {% empty %}
+  <p class="cl-vide" style="padding:32px 0;">Aucun cours ne vous est encore assigné.</p>
+  {% endfor %}
 </div>
 {% endblock %}

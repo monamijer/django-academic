@@ -4,9 +4,25 @@
 (function () {
   'use strict';
 
+  // Impression : un <details> fermé masque son contenu, et le CSS ne peut pas
+  // le forcer. On ouvre donc tout juste avant d'imprimer, puis on restaure.
+  var fermesAvantImpression = [];
+  window.addEventListener('beforeprint', function () {
+    fermesAvantImpression = [];
+    document.querySelectorAll('details:not([open])').forEach(function (d) {
+      fermesAvantImpression.push(d);
+      d.setAttribute('open', '');
+    });
+  });
+  window.addEventListener('afterprint', function () {
+    fermesAvantImpression.forEach(function (d) { d.removeAttribute('open'); });
+    fermesAvantImpression = [];
+  });
+
+  // Odomètre (désactivé si l'utilisateur préfère réduire les animations).
   var reduit = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reduit) { return; }
-
+  
   var TOURS = 2; // nombre de dizaines parcourues avant de s'arrêter
 
   function bande() {

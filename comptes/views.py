@@ -94,6 +94,31 @@ def _contexte_etudiant(utilisateur):
         "seuil": SEUIL_REUSSITE,
     }
 
+def _contexte_professeur(utilisateur):
+    """Données du gradebook : un professeur ne gère que ses propres cours,
+    chacun avec son effectif réel et un aperçu des étudiants inscrits."""
+    cours_qs = (utilisateur.cours_enseignes.filter(est_actif=True)
+                .select_related("departement")
+                .prefetch_related("inscriptions__etudiant__utilisateur"))
+
+    lignes = []
+    for cours in cours_qs:
+        inscriptions = list(cours.inscriptions.select_related("etudiant__utilisateur")
+                            .order_by("etudiant__matricule")[:5])
+        nb_inscrits = cours.inscriptions.count()
+        lignes.append({
+            "cours": cours,
+            "nb_inscrits": nb_inscrits,
+            "nb_notes": cours.notes.count(),
+            "apercu": inscriptions,
+            "nb_restants": max(nb_inscrits - len(inscriptions), 0),
+        })
+
+    return {
+        "lignes_cours": lignes,
+        "nb_cours": len(lignes),
+        "nb_etudiants_total": Etudiant.objects.filter(inscriptions__cours__in=cours_qs).distinct().count(),
+    }
 
 @login_required
 def tableau_bord(request):
@@ -135,12 +160,9 @@ def tableau_bord(request):
         template = "comptes/tableau_bord_chef_departement.html"
 
     elif u.role == Utilisateur.Role.PROFESSEUR:
-        cours = u.cours_enseignes.filter(est_actif=True)
-        contexte.update({
-            "cours": cours,
-            "nb_etudiants": Etudiant.objects.filter(inscriptions__cours__in=cours).distinct().count(),
-        })
+        contexte.update(_contexte_professeur(u))
         template = "comptes/tableau_bord_professeur.html"
+
 
     elif u.role == Utilisateur.Role.SECRETAIRE:
         departements = u.departements_geres()

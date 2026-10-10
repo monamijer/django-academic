@@ -256,6 +256,8 @@ body.registre a, body.registre button { cursor: var(--cursor); }
   .rubrique::after { animation: none; }
   .od__bande { transition: none; }
   .lien { transition: none; }
+  .cl-actions { transition: none; }
+  .cl-chevron { transition: none; }
 }
 
 /* ---------- Impression A4, noir et blanc ---------- */
@@ -281,4 +283,59 @@ body.registre a, body.registre button { cursor: var(--cursor); }
   .jour--aujourdhui .jour__nom { text-decoration-color: #000; }
   .notes .c-note--basse { color: #000; font-weight: 700; text-decoration: underline; }
   .jour, .creneau, .notes tr { break-inside: avoid; }
+}
+
+/* ---------- Cahier : gradebook professeur, accordéon natif <details> ---------- */
+.cahier { margin-bottom: calc(var(--space-unit) * 4); }
+/* Le filet de la rubrique sert déjà de bord supérieur : pas de double trait. */
+.rubrique + .cahier { margin-top: calc(var(--space-unit) * -3); }
+.rubrique + .cahier .cours-ligne:first-of-type { border-top: 0; }
+.cours-ligne { border-top: var(--rule-width) solid var(--rule); }
+.cours-ligne:first-of-type { border-top: var(--rule-width) solid var(--ink); }
+.cours-ligne:last-of-type { border-bottom: var(--rule-width) solid var(--ink); }
+
+.cours-ligne summary {
+  display: grid; grid-template-columns: 92px minmax(0, 1fr) auto 110px 26px;
+  align-items: center; gap: 20px; padding: 18px 0; list-style: none;
+}
+.cours-ligne summary::-webkit-details-marker { display: none; }
+.cours-ligne summary::marker { content: ""; }
+.cours-ligne summary:focus-visible { outline: 1px solid var(--ink); outline-offset: 4px; }
+
+.cl-code { font-family: var(--font-mono); font-size: .76rem; color: var(--ink-soft); }
+.cl-titre { min-width: 0; }
+.cl-titre .t { display: block; font-family: var(--font-display); font-weight: 500; font-size: 1.22rem; line-height: 1.15; }
+.cl-titre .d { display: block; font-family: var(--font-mono); font-size: .66rem; color: var(--ink-mute); margin-top: 3px; }
+
+.cl-actions { display: flex; gap: 14px; font-family: var(--font-mono); font-size: .68rem; opacity: 0; transform: translateY(-2px); pointer-events: none; transition: opacity .2s ease, transform .2s ease; white-space: nowrap; }
+.cours-ligne:hover .cl-actions, .cours-ligne:focus-within .cl-actions { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+.cl-nombre { text-align: right; line-height: .9; }
+.cl-nombre b { font-family: var(--font-display); font-weight: 300; font-size: 2.1rem; letter-spacing: -.03em; font-variant-numeric: tabular-nums lining-nums; }
+.cl-nombre .unite { display: block; font-family: var(--font-mono); font-size: .6rem; color: var(--ink-mute); margin-top: 2px; }
+
+.cl-chevron { font-family: var(--font-display); font-style: italic; font-size: 1.2rem; text-align: right; transition: transform .25s ease; color: var(--ink-mute); }
+.cours-ligne[open] .cl-chevron { transform: rotate(90deg); }
+
+.cl-corps { padding: 16px 0 22px; border-top: var(--rule-width) dashed var(--rule); }
+.cl-apercu { width: 100%; border-collapse: collapse; font-size: .86rem; margin-bottom: 10px; }
+.cl-apercu th { font-family: var(--font-mono); font-weight: 400; font-size: .62rem; color: var(--ink-mute); text-align: left; padding-bottom: 6px; }
+.cl-apercu td { padding: 5px 14px 5px 0; }
+.cl-apercu .m { font-family: var(--font-mono); font-size: .74rem; color: var(--ink-soft); width: 150px; }
+.cl-plus { font-family: var(--font-mono); font-size: .7rem; color: var(--ink-mute); margin: 4px 0; }
+.cl-vide { font-family: var(--font-display); font-style: italic; color: var(--ink-mute); margin: 0 0 10px; }
+
+@media (max-width: 760px) {
+  .cours-ligne summary { grid-template-columns: 1fr auto 22px; gap: 4px 14px; }
+  .cl-code { grid-column: 1; grid-row: 1; }
+  .cl-titre { grid-column: 1; grid-row: 2; }
+  .cl-nombre { grid-column: 2; grid-row: 1 / span 2; }
+  .cl-chevron { grid-column: 3; grid-row: 1 / span 2; }
+  .cl-actions { grid-column: 1 / -1; grid-row: 3; opacity: 1; transform: none; pointer-events: auto; flex-wrap: wrap; padding-top: 6px; }
+}
+
+@media print {
+  .cahier { max-width: none; padding: 0; }
+  .cl-actions, .cl-chevron { display: none; }
+  .cours-ligne { break-inside: avoid; }
 }
