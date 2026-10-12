@@ -1,7 +1,32 @@
+import re
+
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
+from django.core.exceptions import ValidationError
 
 from .models import Utilisateur
+
+# Règles partagées avec static/js/profil.js, qui les lit via des attributs data-* :
+# le navigateur ne fait que refléter ce que le serveur exige, jamais l'inverse.
+TELEPHONE_CHIFFRES_MIN = 8    # ex. 79123456 (numéro local burundais)
+TELEPHONE_CHIFFRES_MAX = 15   # plafond de la norme E.164
+MOT_DE_PASSE_LONGUEUR_MIN = 8  # doit rester égal à MinimumLengthValidator (settings.py)
+
+_FORMAT_TELEPHONE = re.compile(r"\+?[0-9][0-9 .\-]*")
+
+
+def valider_telephone(valeur):
+    """Un « + » optionnel, puis des chiffres séparés au besoin par espaces,
+    points ou tirets ; entre 8 et 15 chiffres au total."""
+    if not _FORMAT_TELEPHONE.fullmatch(valeur.strip()):
+        raise ValidationError(
+            "Chiffres, espaces, points ou tirets uniquement, avec un « + » optionnel au début."
+        )
+    nb_chiffres = len(re.sub(r"[^0-9]", "", valeur))
+    if not TELEPHONE_CHIFFRES_MIN <= nb_chiffres <= TELEPHONE_CHIFFRES_MAX:
+        raise ValidationError(
+            f"Le numéro doit contenir entre {TELEPHONE_CHIFFRES_MIN} et {TELEPHONE_CHIFFRES_MAX} chiffres."
+        )
 
 
 class ConnexionForm(AuthenticationForm):
@@ -40,11 +65,30 @@ class ProfilForm(forms.ModelForm):
             self.fields[champ].disabled = True
             self.fields[champ].help_text = "Géré par l'administration — non modifiable ici."
 
+        telephone = self.fields["telephone"]
+        telephone.required = True  # le modèle autorise le vide, pas ce formulaire
+        telephone.label = "Téléphone"
+        telephone.validators.append(valider_telephone)
+        telephone.help_text = "Exemple : +257 79 123 456 (8 à 15 chiffres)."
+        telephone.widget.attrs.update({
+            "inputmode": "tel",
+            "autocomplete": "tel",
+            "data-garde-champ": "telephone",
+            "data-min-chiffres": TELEPHONE_CHIFFRES_MIN,
+            "data-max-chiffres": TELEPHONE_CHIFFRES_MAX,
+        })
+
+
 class ChangerMotDePasseForm(PasswordChangeForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.widget.attrs["class"] = "form-control"
+        # Repères pour static/js/profil.js (garde du bouton d'envoi).
+        self.fields["old_password"].widget.attrs["data-garde-champ"] = "ancien"
+        self.fields["new_password1"].widget.attrs["data-garde-champ"] = "nouveau"
+        self.fields["new_password1"].widget.attrs["data-min-longueur"] = MOT_DE_PASSE_LONGUEUR_MIN
+        self.fields["new_password2"].widget.attrs["data-garde-champ"] = "confirmation"
 
 
 class UtilisateurForm(forms.ModelForm):
