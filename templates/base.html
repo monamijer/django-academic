@@ -50,6 +50,8 @@ h1,h2,h3,h4,h5,h6{font-family:'Fraunces',serif; font-weight:600; letter-spacing:
 .page-head h1{font-size:1.55rem; margin:0;}
 .page-head .subtitle{color:var(--muted); font-size:.9rem; font-weight:500; margin-top:.15rem; font-family:'Work Sans',sans-serif;}
 
+.btn-brand:disabled, .btn-brand.disabled{background:var(--line); border-color:var(--line); color:var(--muted); opacity:1; cursor:not-allowed; pointer-events:auto;}
+.btn-outline-brand:disabled, .btn-outline-brand.disabled{background:transparent; border-color:var(--line); color:var(--muted); opacity:1; cursor:not-allowed; pointer-events:auto;}
 .btn{border-radius:8px; font-weight:600; font-size:.88rem;}
 .btn-brand{background:var(--brand); border-color:var(--brand); color:var(--ink); font-weight:700;}
 .btn-brand:hover{background:var(--brand-dark); border-color:var(--brand-dark); color:#fff;}
@@ -126,6 +128,7 @@ h1,h2,h3,h4,h5,h6{font-family:'Fraunces',serif; font-weight:600; letter-spacing:
 
 a{color:var(--brand-dark);}
 ::selection{background:var(--brand); color:var(--ink);}
+
 
 @media print{ .no-print{display:none !important;} body{background:#fff;} .panel{border:1px solid #ccc;} }
 @media (max-width:768px){ .topbar{flex-wrap:wrap;} }
