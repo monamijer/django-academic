@@ -1,116 +1,138 @@
-# 🗃️ GESTOCK — Web-based Stock Management Application
+# 🎓 UNIVPILOT — University Management (Students & Staff)
 
-[![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white)](https://www.djangoproject.com/)
-[![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![Bootstrap](https://img.shields.io/badge/Bootstrap%205-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white)](https://getbootstrap.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
-[![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](#)
+> Django project for the exam: a university management web app with authentication, role hierarchy, activity history, scope-limited CRUD, and printable reports.
 
-> 🎓 Django (Python) project: web application with authentication, differentiated authorizations, activity history, CRUD operations on multiple types of items (products, categories, stock movements, users), search, and printable reports.
+---
+
+## 📋 Roles & Permission Matrix
+
+| Role | Scope | Can do |
+|---|---|---|
+| 🛡️ System Administrator | Global (technical) | Manage all accounts, configure the app, view all history |
+| 🎯 Academic Director | Whole university | Cross-faculty views and reports |
+| 🏛️ Dean | One faculty | Manage departments, programs, and courses of their faculty |
+| 📂 Department Head | One department | Manage courses, students, and enrollments of their department |
+| 📚 Professor | Their courses | Enter/modify grades for students enrolled in their courses only |
+| 📝 Secretary | One department | Manage student files and enrollments, no grade access |
+| 🧑‍🎓 Student | Themselves | View their profile, grades, average, and honors |
+
+> **Principle**: Each role only sees and modifies their own scope (establishment > faculty > department > course), never everything by default. Implemented via Django groups (`configurer_roles`) + queryset filtering on the `Utilisateur` model (`departements_geres()`, `a_acces_global`).
 
 ---
 
 ## ✨ Features
 
-- 🔐 **Authentication**: login/logout (`comptes` app), accounts can be enabled/disabled.
-- 🛡️ **Differentiated authorizations**:
-  - 👑 Administrators (`est_administrateur=True`) → full permissions.
-  - 👤 Other users → standard Django permissions assigned via **groups**
-    (e.g. "Magasinier" group: can add/edit products and record movements,
-    but cannot delete or manage accounts).
-- 📜 **Activity history** (`JournalActivite`): every add, edit, view, delete,
-  deactivation, search, login/logout and report printing is logged with the
-  user, timestamp and related object — viewable in "Historique"
-  (administrators only).
-- 🔄 **Full CRUD** on:
-  - 📦 Products (multiple categories/types), with enable/disable, search, low-stock alerts.
-  - 🏷️ Product categories (with an associated color used throughout the UI).
-  - 🔁 Stock movements (in/out), which automatically update quantities.
-  - 👥 Users (administrators only), with group/role management.
-- 🖨️ **Printable reports** (Print button → dedicated print layout):
-  - 📊 In/out movements over a period (7 or 30 days, customizable).
-  - ⏳ Expired and soon-to-expire products.
-  - 📈 Current stock state with total value.
-- 🎨 **Interface**: Bootstrap 5 + Bootstrap Icons, icon buttons, dedicated color
-  per section (users = 🟣 purple, products = 🔵 blue, movements = 🟢 green, reports = 🟠 orange,
-  destructive actions = 🔴 red), color badges per product category.
-- 🌐 **Shared data**: all data (products, movements...) is visible to all logged-in
-  users whose permissions allow it — not a per-user silo.
+| Feature | Description |
+|---|---|
+| 🔐 **Authentication** | + "My Profile" page self-service for all roles (personal info, password change, read-only scope) |
+| 📜 **Activity History** | Automatic via Django signals, viewable by admin & academic director |
+| 🔄 **Scoped CRUD** | Faculties (global), departments/programs/courses (dean/head), students/enrollments (head/secretary), grades (professor only) |
+| 🧮 **Business Logic** | Average/honors calculation, at-risk detection (avg < 10), course capacity check |
+| 🖨️ **Printable Reports** | Student grade report, student list, staff list, course performance (avg + distribution) |
+| 📊 **Role Dashboards** | Single entry point, content changes entirely by role |
+| 🎨 **Academic Identity** | Oxford blue + gold, Fraunces (titles) / Work Sans (interface), card grids, dense tables |
 
 ---
 
-## 🚀 Local Installation
+## 🚀 Local Installation (SQLite, default)
 
 ```bash
+# Create virtual environment
 python3 -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
+
+# Install dependencies
 pip install -r requirements.txt
 
-cp .env.example .env            # then edit .env if needed
+# Configure environment
+cp .env.example .env
 
+# Initialize database & demo data
 python manage.py migrate
-python manage.py donnees_demo   # creates demo accounts and data
+python manage.py donnees_demo   # creates role groups + demo accounts + realistic data
+
+# Run the server
 python manage.py runserver
 ```
 
-🌍 Open http://127.0.0.1:8000/
-
-### 🔑 Demo Accounts
-
-| Role | Username | Password | Rights |
-|------|----------|----------|--------|
-| 👑 Administrator | `admin` | `AdminGestock2026!` | Full permissions |
-| 📦 Magasinier | `magasinier` | `Magasin2026!` | Products/movements only, no delete, no user management |
-
-> ⚠️ **Change these passwords before any real deployment.**
+🌐 **Go to** http://127.0.0.1:8000/
 
 ---
 
-## 🐘 Using PostgreSQL (instead of SQLite)
+## 👥 Demo Accounts
 
-1. 🛠️ Create a PostgreSQL database and user.
-2. 📝 In `.env`, set:
-   `DATABASE_URL=postgres://user:password@localhost:5432/gestock`
-3. 🔄 Run `python manage.py migrate` again.
+| Role | Username | Password |
+|---|---|---|
+| 🛡️ System Administrator | `admin` | `AdminUniv2026!` |
+| 🎯 Academic Director | `directeur` | `Directeur2026!` |
+| 🏛️ Dean (Faculty of Science) | `doyen` | `Doyen2026!` |
+| 📂 Department Head (CS) | `chef_dept` | `ChefDept2026!` |
+| 📚 Professor (CS) | `professeur` | `Prof2026!` |
+| 📝 Secretary (CS) | `secretaire` | `Secretaire2026!` |
+| 🧑‍🎓 Student | `etudiant1` | `Etudiant2026!` |
+
+> ⚠️ **These passwords are weak on purpose. Change them before any real deployment.**
+
+---
+
+## 🗄️ Using MySQL via XAMPP (instead of SQLite)
+
+1. 🚀 Start **Apache** and **MySQL** from the XAMPP control panel.
+2. 🌐 Open phpMyAdmin (http://localhost/phpmyadmin) and create a database `gestion_universite` (utf8mb4_unicode_ci).
+3. 📝 In `.env`, set:
+   ```env
+   USE_MYSQL=True
+   MYSQL_DATABASE=gestion_universite
+   MYSQL_USER=root
+   MYSQL_PASSWORD=
+   MYSQL_HOST=127.0.0.1
+   MYSQL_PORT=3306
+   ```
+4. 🔄 Re-run `python manage.py migrate` then `python manage.py donnees_demo`.
+
+> 💡 **Note**: PyMySQL is used as the MySQLdb driver in `settings.py` — mysqlclient was skipped due to native compilation issues on some systems.
 
 ---
 
 ## 📁 Project Structure
 
 ```
-gestock/        # ⚙️ Django project settings and global routes
-comptes/        # 👥 users, login, groups/permissions, activity history
-stock/          # 📦 categories, products, stock movements (CRUD, search)
-rapports/       # 🖨️ printable reports (movements, expiry, stock state)
-templates/      # 🧩 shared base template (base.html) + pagination
+universite/     # 🧠 Global Django settings and routes
+comptes/        # 👤 Users, roles, login, profile, activity history
+academique/     # 🏛️ Faculties, departments, programs, courses, academic years
+etudiants/      # 🧑‍🎓 Student records, enrollments, grades, professor grade entry
+rapports/       # 🖨️ Printable reports (transcripts, lists, course performance)
+templates/      # 🎨 Shared base template (base.html) + pagination
 ```
 
 ---
 
-## 👑 Creating an Additional Administrator Account
+## 📜 Git History
 
-```bash
-python manage.py createsuperuser
+The project was built step by step, each step as a separate commit (`git log --oneline` for details):
+
+```
+scaffold → DB config → user/roles model → academic structure → students/grades
+→ migrations → permissions → auth/profile/dashboards → academic CRUD
+→ student/grade CRUD → reports → demo data → redirect bug fix
 ```
 
-Then, in the "Users" interface (or Django admin `/admin/`), check
-"est_administrateur" to grant full permissions. ✅
+> 🔧 **Note**: Last commit fixed a redirect bug found while testing unauthorized access.
 
 ---
 
-## 🧭 Possible Next Steps
+## 🚧 What's Missing / Could Be Improved
 
-- 📄 Generate downloadable PDF reports (e.g. with `weasyprint`) in addition to browser printing.
-- 📊 Add CSV/Excel export for lists.
-- 🧪 Add automated tests (`python manage.py test`).
+- 📄 PDF export for reports (e.g. `weasyprint`) in addition to browser printing
+- 🔔 Notifications for students dropping below the passing threshold
+- 🧪 Automated tests (`python manage.py test`) to lock down the scope filtering behavior
 
 ---
 
-<div align="center">
+## 📄 License
 
-**⭐ If you find this project useful, give it a star! ⭐**
+MIT — feel free to use, modify, and distribute. See [LICENSE](LICENSE) for details.
 
-Made with ❤️ using Django & Bootstrap
+---
 
-</div>
+*Made with ☕ and Django — for educational purposes.*
