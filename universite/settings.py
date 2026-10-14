@@ -1,18 +1,25 @@
 """
 Project settings and university management (Dean, Departement Chef, Professors, Staff, Students,...).
 """
-
 from pathlib import Path
-import pymysql
-from decouple import config
 
-pymysql.install_as_MySQLdb()  # permet d'utiliser PyMySQL comme driver MySQL sans compilation native
+from decouple import config
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-me-in-production')
 DEBUG = config('DEBUG', default=True, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*').split(',')
+# Origines HTTPS autorisées pour les formulaires POST, ex. https://univ.pythonanywhere.com
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in config('CSRF_TRUSTED_ORIGINS', default='').split(',') if o.strip()]
+
+# Garde-fou : la clé de secours ci-dessus est publique (elle est dans le dépôt).
+# Hors développement, refuser de démarrer plutôt que de tourner avec elle.
+if not DEBUG and SECRET_KEY.startswith('django-insecure-'):
+    raise ImproperlyConfigured(
+        "SECRET_KEY n'est pas définie dans .env : impossible de démarrer avec DEBUG=False."
+    )
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -62,6 +69,8 @@ TEMPLATES = [
 WSGI_APPLICATION = 'universite.wsgi.application'
 
 if config('USE_MYSQL', default=False, cast=bool):
+    import pymysql
+    pymysql.install_as_MySQLdb()  # PyMySQL comme driver MySQL, sans compilation native
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
