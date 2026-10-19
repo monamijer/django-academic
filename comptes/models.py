@@ -1,4 +1,5 @@
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.db import models
 
 
@@ -34,8 +35,12 @@ class Utilisateur(AbstractUser):
 
     def save(self, *args, **kwargs):
         self.is_active = self.est_actif_compte
-        if self.role in (self.Role.ADMIN_SYSTEME, self.Role.DIRECTEUR_ACADEMIQUE):
-            self.is_staff = True
+        # is_staff est recalculé à chaque save : un compte rétrogradé de rôle
+        # ne conserve jamais les privilèges staff/admin par accident.
+        self.is_staff = (
+            self.is_superuser
+            or self.role in (self.Role.ADMIN_SYSTEME, self.Role.DIRECTEUR_ACADEMIQUE)
+        )
         super().save(*args, **kwargs)
 
     def __str__(self):
