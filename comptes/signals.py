@@ -51,19 +51,18 @@ def creer_fiche_etudiant_si_manquante(sender, instance, created, **kwargs):
             suffixe += 1
             matricule = f"{base}-{suffixe}"
 
-        # etudiants/models.py — remplace la ligne filiere = ...
-        filiere = models.ForeignKey(
-            Filiere, on_delete=models.PROTECT, related_name="etudiants",
-            null=True, blank=True,
-            help_text="Null tant qu'un secrétaire n'a pas complété la fiche provisoire."
+        filiere_defaut = (
+            # Si l'utilisateur est rattaché à un département, on prend la
+            # première filière active ; sinon None (à compléter plus tard).
+            __import__("academique.models", fromlist=["Filiere"]).Filiere.objects
+            .filter(departement=instance.departement, est_active=True)
+            .first()
+            if instance.departement_id else None
         )
 
         Etudiant.objects.create(
             utilisateur=instance,
             matricule=matricule,
-            filiere=filiere,  # voir note ci-dessous
-            promotion = models.PositiveSmallIntegerField(
-                null=True, blank=True,
-                help_text="Année d'entrée, ex: 2024."
-)
+            filiere=filiere_defaut,  # voir note ci-dessous
+            promotion=0,
         )

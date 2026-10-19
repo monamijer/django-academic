@@ -12,7 +12,10 @@ class Etudiant(models.Model):
     utilisateur = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="fiche_etudiant")
     matricule = models.CharField(max_length=30, unique=True)
     filiere = models.ForeignKey(Filiere, on_delete=models.PROTECT, related_name="etudiants")
-    promotion = models.PositiveSmallIntegerField(help_text="Année d'entrée, ex: 2024")
+    promotion = models.PositiveSmallIntegerField(
+        null=True, blank=True,
+        help_text="Année d'entrée, ex: 2024."
+        )
     est_actif = models.BooleanField(default=True, help_text="Décochez pour désactiver sans supprimer (ex: abandon).")
 
     class Meta:
