@@ -1,5 +1,6 @@
 from datetime import timedelta
 from functools import wraps
+from django.db.models import Q
 
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash, views as auth_views
@@ -220,27 +221,41 @@ def liste_utilisateurs(request):
     role = request.GET.get("role", "")
     utilisateurs = Utilisateur.objects.all().order_by("role", "username")
     if q:
-        utilisateurs = utilisateurs.filter(username__icontains=q) | utilisateurs.filter(email__icontains=q)
+        utilisateurs = utilisateurs.filter(
+            Q(username__icontains=q)
+            | Q(email__icontains=q)
+            | Q(first_name__icontains=q)
+            | Q(last_name__icontains=q)
+        )
         enregistrer_activite(request.user, "RECHERCHE", "Utilisateur", details=f"Recherche: '{q}'")
     if role:
         utilisateurs = utilisateurs.filter(role=role)
     return render(request, "comptes/liste_utilisateurs.html", {
-        "utilisateurs": utilisateurs.distinct(), "q": q, "role": role, "roles": Utilisateur.Role.choices,
+        "utilisateurs": utilisateurs, "q": q, "role": role, "roles": Utilisateur.Role.choices,
     })
-
 
 @exiger_admin_systeme
 def creer_utilisateur(request):
     if request.method == "POST":
         form = UtilisateurCreationForm(request.POST)
         if form.is_valid():
+            role_choisi = form.cleaned_data.get("role")
+            if role_choisi == Utilisateur.Role.ETUDIANT:
+                messages.info(
+                    request,
+                    "Pour créer un compte étudiant, utilisez le formulaire « Ajouter un étudiant » "
+                    "afin que la fiche académique (matricule, filière, promotion) soit créée en même temps.",
+                )
+                return redirect("etudiants:creer_etudiant")
             u = form.save()
             enregistrer_activite(request.user, "AJOUT", "Utilisateur", u.pk, str(u))
             messages.success(request, f"Compte « {u} » créé.")
             return redirect("comptes:liste_utilisateurs")
     else:
         form = UtilisateurCreationForm()
-    return render(request, "comptes/formulaire_utilisateur.html", {"form": form, "titre": "Ajouter un compte", "creation": True})
+    return render(request, "comptes/formulaire_utilisateur.html", {
+        "form": form, "titre": "Ajouter un compte", "creation": True,
+    })
 
 
 @exiger_admin_systeme
@@ -297,5 +312,5 @@ class HistoriqueActiviteView(LoginRequiredMixin, ListView):
         qs = super().get_queryset().select_related("utilisateur")
         q = self.request.GET.get("q", "").strip()
         if q:
-            qs = qs.filter(objet_repr__icontains=q) | qs.filter(type_objet__icontains=q)
+            qs = qs.filter(Q(objet_repr__icontains=q) | Q(type_objet__icontains=q))
         return qs
