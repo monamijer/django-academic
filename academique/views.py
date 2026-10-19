@@ -3,6 +3,7 @@ from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
+from django.db.models import Q
 from comptes.models import enregistrer_activite
 
 from .forms import CoursForm, DepartementForm, FaculteForm, FiliereForm
@@ -143,12 +144,11 @@ def liste_cours(request):
     else:
         cours = Cours.objects.filter(departement__in=u.departements_geres()).select_related("departement")
     if q:
-        cours = cours.filter(nom__icontains=q)
+        cours = cours.filter(Q(nom__icontains=q) | Q(code__icontains=q))
         enregistrer_activite(u, "RECHERCHE", "Cours", details=f"Recherche: '{q}'")
     paginator = Paginator(cours.distinct(), 12)
     page = paginator.get_page(request.GET.get("page"))
     return render(request, "academique/liste_cours.html", {"page_obj": page, "q": q})
-
 
 @login_required
 def creer_cours(request):
