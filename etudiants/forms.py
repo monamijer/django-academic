@@ -2,7 +2,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 
-from academique.models import Filiere
+from academique.models import Cours, Filiere
 from comptes.forms import UtilisateurCreationForm
 from comptes.models import Utilisateur
 
@@ -10,6 +10,10 @@ from .models import Etudiant, Inscription, Note
 
 
 class EtudiantCreationForm(UtilisateurCreationForm):
+    """Crée simultanément le compte Utilisateur (role=ETUDIANT) et la fiche
+    Etudiant. La création est atomique : si la fiche échoue, le compte n'est
+    pas persisté non plus."""
+
     matricule = forms.CharField(
         max_length=30,
         widget=forms.TextInput(attrs={"class": "form-control", "autocomplete": "off"}),
@@ -32,6 +36,7 @@ class EtudiantCreationForm(UtilisateurCreationForm):
 
     def __init__(self, *args, utilisateur=None, **kwargs):
         super().__init__(*args, **kwargs)
+        # On retire les champs hérités non pertinents pour un étudiant.
         for champ in ("role", "faculte", "departement", "est_actif_compte"):
             self.fields.pop(champ, None)
 
@@ -39,19 +44,22 @@ class EtudiantCreationForm(UtilisateurCreationForm):
         if utilisateur and not utilisateur.a_acces_global:
             geres = utilisateur.departements_geres()
             if geres.exists():
-                filiere_field.queryset = Filiere.objects.filter(
-                    departement__in=geres, est_active=True
-                ).select_related("departement")
+                filiere_field.queryset = (
+                    Filiere.objects
+                    .filter(departement__in=geres, est_active=True)
+                    .select_related("departement")
+                )
             else:
                 filiere_field.help_text = (
                     "Votre compte n'est rattaché à aucun département. "
                     "Contactez un administrateur."
                 )
         else:
-            filiere_field.queryset = Filiere.objects.filter(
-                est_active=True
-            ).select_related("departement")
-            # Bouton "+ Ajouter une filière" affiché à côté du select.
+            filiere_field.queryset = (
+                Filiere.objects
+                .filter(est_active=True)
+                .select_related("departement")
+            )
             filiere_field.widget.attrs.update({
                 "data-add-url": "academique:creer_filiere",
                 "data-add-label": "Ajouter une filière",
@@ -70,10 +78,7 @@ class EtudiantCreationForm(UtilisateurCreationForm):
         return cleaned
 
     def save(self, commit=True):
-        """Crée le compte ET la fiche étudiant dans une même transaction.
-        En cas d'échec (matricule en doublon, filière supprimée entre-temps,
-        contrainte d'unicité, etc.), rien n'est persisté : impossible de se
-        retrouver avec un Utilisateur orphelin invisible dans la liste."""
+        """Crée le compte ET la fiche étudiant dans une même transaction."""
         if not commit:
             return super().save(commit=False)
 
@@ -148,7 +153,8 @@ class InscriptionForm(forms.ModelForm):
     def clean(self):
         cleaned = super().clean()
         instance = Inscription(**{
-            k: v for k, v in cleaned.items() if k in ["etudiant", "cours", "annee_academique"]
+            k: v for k, v in cleaned.items()
+            if k in ["etudiant", "cours", "annee_academique"]
         })
         instance.pk = self.instance.pk
         instance.clean()
@@ -163,7 +169,9 @@ class NoteForm(forms.ModelForm):
             "etudiant": forms.Select(attrs={"class": "form-select"}),
             "cours": forms.Select(attrs={"class": "form-select"}),
             "annee_academique": forms.Select(attrs={"class": "form-select"}),
-            "valeur": forms.NumberInput(attrs={"class": "form-control", "step": "0.25", "min": 0, "max": 20}),
+            "valeur": forms.NumberInput(attrs={
+                "class": "form-control", "step": "0.25", "min": 0, "max": 20,
+            }),
         }
 
     def __init__(self, *args, professeur=None, cours_fige=None, **kwargs):
