@@ -1,30 +1,40 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 
 from academique.models import Cours
-from comptes.models import enregistrer_activite
+from comptes.models import Utilisateur, enregistrer_activite
 
 from .forms import EtudiantCreationForm, EtudiantForm, InscriptionForm, NoteForm
 from .models import Etudiant, Inscription, Note
 
 
 def _etudiants_visibles(user):
+    """Queryset des étudiants accessibles selon le périmètre du rôle."""
+    qs = Etudiant.objects.select_related("utilisateur", "filiere", "filiere__departement")
     if user.a_acces_global:
-        return Etudiant.objects.all()
-    return Etudiant.objects.filter(filiere__departement__in=user.departements_geres())
+        return qs
+    return qs.filter(filiere__departement__in=user.departements_geres())
 
 
 @login_required
 def liste_etudiants(request):
     u = request.user
     q = request.GET.get("q", "").strip()
-    etudiants = _etudiants_visibles(u).select_related("utilisateur", "filiere")
+    etudiants = _etudiants_visibles(u)
     if q:
-        etudiants = etudiants.filter(matricule__icontains=q) | etudiants.filter(utilisateur__last_name__icontains=q)
+        etudiants = etudiants.filter(
+            Q(matricule__icontains=q)
+            | Q(utilisateur__first_name__icontains=q)
+            | Q(utilisateur__last_name__icontains=q)
+            | Q(utilisateur__username__icontains=q)
+        )
         enregistrer_activite(u, "RECHERCHE", "Étudiant", details=f"Recherche: '{q}'")
-    paginator = Paginator(etudiants.distinct(), 12)
+
+    paginator = Paginator(etudiants.order_by("matricule"), 12)
     page = paginator.get_page(request.GET.get("page"))
     return render(request, "etudiants/liste_etudiants.html", {"page_obj": page, "q": q})
 
@@ -43,19 +53,34 @@ def detail_etudiant(request, pk):
 @login_required
 def creer_etudiant(request):
     u = request.user
-    if u.role not in (u.Role.ADMIN_SYSTEME, u.Role.DIRECTEUR_ACADEMIQUE, u.Role.DOYEN, u.Role.CHEF_DEPARTEMENT, u.Role.SECRETAIRE):
+    roles_autorises = (
+        Utilisateur.Role.ADMIN_SYSTEME,
+        Utilisateur.Role.DIRECTEUR_ACADEMIQUE,
+        Utilisateur.Role.DOYEN,
+        Utilisateur.Role.CHEF_DEPARTEMENT,
+        Utilisateur.Role.SECRETAIRE,
+    )
+    if u.role not in roles_autorises:
         messages.error(request, "Accès non autorisé.")
         return redirect("comptes:tableau_bord")
+
     if request.method == "POST":
         form = EtudiantCreationForm(request.POST, utilisateur=u)
-        if form.is_valid():
-            compte = form.save()
-            enregistrer_activite(u, "AJOUT", "Étudiant", compte.pk, str(compte))
-            messages.success(request, f"Étudiant « {compte} » inscrit.")
-            return redirect("etudiants:liste_etudiants")
+        try:
+            if form.is_valid():
+                compte = form.save()
+                enregistrer_activite(u, "AJOUT", "Étudiant", compte.pk, str(compte))
+                messages.success(request, f"Étudiant « {compte} » inscrit.")
+                return redirect("etudiants:liste_etudiants")
+        except ValidationError as exc:
+            # IntegrityError convertie par EtudiantCreationForm.save()
+            for msg in exc.messages:
+                messages.error(request, msg)
     else:
         form = EtudiantCreationForm(utilisateur=u)
-    return render(request, "etudiants/formulaire_etudiant.html", {"form": form, "titre": "Ajouter un étudiant"})
+    return render(request, "etudiants/formulaire_etudiant.html", {
+        "form": form, "titre": "Ajouter un étudiant",
+    })
 
 
 @login_required
@@ -70,7 +95,9 @@ def modifier_etudiant(request, pk):
             return redirect("etudiants:detail_etudiant", pk=etudiant.pk)
     else:
         form = EtudiantForm(instance=etudiant, utilisateur=u)
-    return render(request, "etudiants/formulaire_etudiant.html", {"form": form, "titre": f"Modifier {etudiant}"})
+    return render(request, "etudiants/formulaire_etudiant.html", {
+        "form": form, "titre": f"Modifier {etudiant}",
+    })
 
 
 @login_required
@@ -86,7 +113,9 @@ def basculer_activation_etudiant(request, pk):
 @login_required
 def liste_inscriptions(request):
     u = request.user
-    inscriptions = Inscription.objects.filter(etudiant__in=_etudiants_visibles(u)).select_related("etudiant", "cours", "annee_academique")
+    inscriptions = Inscription.objects.filter(
+        etudiant__in=_etudiants_visibles(u)
+    ).select_related("etudiant", "cours", "annee_academique")
     paginator = Paginator(inscriptions, 15)
     page = paginator.get_page(request.GET.get("page"))
     return render(request, "etudiants/liste_inscriptions.html", {"page_obj": page})
@@ -103,15 +132,17 @@ def creer_inscription(request):
             return redirect("etudiants:liste_inscriptions")
     else:
         form = InscriptionForm(utilisateur=u)
-    return render(request, "etudiants/formulaire_inscription.html", {"form": form, "titre": "Nouvelle inscription"})
+    return render(request, "etudiants/formulaire_inscription.html", {
+        "form": form, "titre": "Nouvelle inscription",
+    })
 
 
 @login_required
 def mes_cours(request):
-    if request.user.role != "PROFESSEUR":
+    if request.user.role != Utilisateur.Role.PROFESSEUR:
         messages.error(request, "Accès réservé aux professeurs.")
         return redirect("comptes:tableau_bord")
-    cours = request.user.cours_enseignes.all()
+    cours = request.user.cours_enseignes.all().select_related("departement")
     return render(request, "etudiants/mes_cours.html", {"cours": cours})
 
 
@@ -119,7 +150,7 @@ def mes_cours(request):
 def notes_cours(request, cours_id):
     u = request.user
     cours = get_object_or_404(Cours, pk=cours_id)
-    if u.role == "PROFESSEUR" and cours not in u.cours_enseignes.all():
+    if u.role == Utilisateur.Role.PROFESSEUR and cours not in u.cours_enseignes.all():
         messages.error(request, "Vous n'enseignez pas ce cours.")
         return redirect("comptes:tableau_bord")
     notes = Note.objects.filter(cours=cours).select_related("etudiant", "annee_academique")
@@ -130,11 +161,13 @@ def notes_cours(request, cours_id):
 def saisir_note(request, cours_id):
     u = request.user
     cours = get_object_or_404(Cours, pk=cours_id)
-    if u.role == "PROFESSEUR" and cours not in u.cours_enseignes.all():
+    if u.role == Utilisateur.Role.PROFESSEUR and cours not in u.cours_enseignes.all():
         messages.error(request, "Vous n'enseignez pas ce cours.")
         return redirect("comptes:tableau_bord")
+
+    professeur_ctx = u if u.role == Utilisateur.Role.PROFESSEUR else None
     if request.method == "POST":
-        form = NoteForm(request.POST, professeur=u if u.role == "PROFESSEUR" else None, cours_fige=cours)
+        form = NoteForm(request.POST, professeur=professeur_ctx, cours_fige=cours)
         if form.is_valid():
             note = form.save(commit=False)
             note.cours = cours
@@ -144,5 +177,7 @@ def saisir_note(request, cours_id):
             messages.success(request, "Note enregistrée.")
             return redirect("etudiants:notes_cours", cours_id=cours.pk)
     else:
-        form = NoteForm(professeur=u if u.role == "PROFESSEUR" else None, cours_fige=cours)
-    return render(request, "etudiants/formulaire_note.html", {"form": form, "titre": f"Saisir une note — {cours}"})
+        form = NoteForm(professeur=professeur_ctx, cours_fige=cours)
+    return render(request, "etudiants/formulaire_note.html", {
+        "form": form, "titre": f"Saisir une note — {cours}",
+    })
