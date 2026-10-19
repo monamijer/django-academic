@@ -9,24 +9,41 @@ class Etudiant(models.Model):
     """Extension du compte Utilisateur (role=ETUDIANT) avec les informations
     propres à un étudiant : matricule, filière, promotion."""
 
-    utilisateur = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="fiche_etudiant")
+    utilisateur = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name="fiche_etudiant"
+    )
     matricule = models.CharField(max_length=30, unique=True)
-    filiere = models.ForeignKey(Filiere, on_delete=models.PROTECT, related_name="etudiants")
+    filiere = models.ForeignKey(
+        Filiere, on_delete=models.PROTECT, related_name="etudiants",
+        null=True, blank=True,
+        help_text="Null tant que la fiche provisoire n'a pas été complétée."
+    )
     promotion = models.PositiveSmallIntegerField(
         null=True, blank=True,
         help_text="Année d'entrée, ex: 2024."
-        )
-    est_actif = models.BooleanField(default=True, help_text="Décochez pour désactiver sans supprimer (ex: abandon).")
+    )
+    est_actif = models.BooleanField(
+        default=True,
+        help_text="Décochez pour désactiver sans supprimer (ex: abandon)."
+    )
 
     class Meta:
         ordering = ["matricule"]
 
     def __str__(self):
-        return f"{self.utilisateur.get_full_name() or self.utilisateur.username} ({self.matricule})"
+        nom = self.utilisateur.get_full_name() or self.utilisateur.username
+        return f"{nom} ({self.matricule})"
+
+    def clean(self):
+        if self.utilisateur_id and self.utilisateur.role != "ETUDIANT":
+            raise ValidationError(
+                "La fiche étudiant ne peut être liée qu'à un utilisateur de rôle ETUDIANT."
+            )
 
     @property
     def departement(self):
-        return self.filiere.departement
+        return self.filiere.departement if self.filiere else None
 
     def moyenne_generale(self):
         notes = self.notes.all()
