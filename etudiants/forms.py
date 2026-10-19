@@ -1,6 +1,8 @@
 from django import forms
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError, transaction
 
-from academique.models import Cours, Filiere
+from academique.models import Filiere
 from comptes.forms import UtilisateurCreationForm
 from comptes.models import Utilisateur
 
@@ -8,36 +10,90 @@ from .models import Etudiant, Inscription, Note
 
 
 class EtudiantCreationForm(UtilisateurCreationForm):
-    matricule = forms.CharField(max_length=30, widget=forms.TextInput(attrs={"class": "form-control"}))
-    filiere = forms.ModelChoiceField(queryset=Filiere.objects.none(), widget=forms.Select(attrs={"class": "form-select"}))
-    promotion = forms.IntegerField(widget=forms.NumberInput(attrs={"class": "form-control"}))
+    matricule = forms.CharField(
+        max_length=30,
+        widget=forms.TextInput(attrs={"class": "form-control", "autocomplete": "off"}),
+        help_text="Identifiant unique de l'étudiant, ex: MAT-2025-042.",
+    )
+    filiere = forms.ModelChoiceField(
+        queryset=Filiere.objects.none(),
+        empty_label="— Sélectionnez une filière —",
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    promotion = forms.IntegerField(
+        min_value=2000,
+        max_value=2100,
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
+        help_text="Année d'entrée, ex: 2024.",
+    )
 
     class Meta(UtilisateurCreationForm.Meta):
         fields = ["username", "first_name", "last_name", "email", "telephone"]
 
     def __init__(self, *args, utilisateur=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields.pop("role", None)
-        self.fields.pop("faculte", None)
-        self.fields.pop("departement", None)
-        self.fields.pop("est_actif_compte", None)
+        for champ in ("role", "faculte", "departement", "est_actif_compte"):
+            self.fields.pop(champ, None)
+
+        filiere_field = self.fields["filiere"]
         if utilisateur and not utilisateur.a_acces_global:
-            self.fields["filiere"].queryset = Filiere.objects.filter(departement__in=utilisateur.departements_geres())
+            geres = utilisateur.departements_geres()
+            if geres.exists():
+                filiere_field.queryset = Filiere.objects.filter(
+                    departement__in=geres, est_active=True
+                ).select_related("departement")
+            else:
+                filiere_field.help_text = (
+                    "Votre compte n'est rattaché à aucun département. "
+                    "Contactez un administrateur."
+                )
         else:
-            self.fields["filiere"].queryset = Filiere.objects.all()
+            filiere_field.queryset = Filiere.objects.filter(
+                est_active=True
+            ).select_related("departement")
+            # Bouton "+ Ajouter une filière" affiché à côté du select.
+            filiere_field.widget.attrs.update({
+                "data-add-url": "academique:creer_filiere",
+                "data-add-label": "Ajouter une filière",
+            })
+
+    def clean_matricule(self):
+        matricule = self.cleaned_data["matricule"].strip()
+        if Etudiant.objects.filter(matricule__iexact=matricule).exists():
+            raise ValidationError("Ce matricule est déjà utilisé.")
+        return matricule
+
+    def clean(self):
+        cleaned = super().clean()
+        if not cleaned.get("filiere"):
+            raise ValidationError({"filiere": "Vous devez choisir une filière."})
+        return cleaned
 
     def save(self, commit=True):
-        utilisateur = super().save(commit=False)
-        utilisateur.role = Utilisateur.Role.ETUDIANT
-        if commit:
-            utilisateur.save()
-            Etudiant.objects.create(
-                utilisateur=utilisateur,
-                matricule=self.cleaned_data["matricule"],
-                filiere=self.cleaned_data["filiere"],
-                promotion=self.cleaned_data["promotion"],
+        """Crée le compte ET la fiche étudiant dans une même transaction.
+        En cas d'échec (matricule en doublon, filière supprimée entre-temps,
+        contrainte d'unicité, etc.), rien n'est persisté : impossible de se
+        retrouver avec un Utilisateur orphelin invisible dans la liste."""
+        if not commit:
+            return super().save(commit=False)
+
+        try:
+            with transaction.atomic():
+                utilisateur = super().save(commit=False)
+                utilisateur.role = Utilisateur.Role.ETUDIANT
+                utilisateur.save()
+                Etudiant.objects.create(
+                    utilisateur=utilisateur,
+                    matricule=self.cleaned_data["matricule"],
+                    filiere=self.cleaned_data["filiere"],
+                    promotion=self.cleaned_data["promotion"],
+                )
+                return utilisateur
+        except IntegrityError as exc:
+            raise ValidationError(
+                f"Impossible de créer l'étudiant : {exc}. "
+                "Vérifiez que le matricule et le nom d'utilisateur ne sont pas déjà pris."
             )
-        return utilisateur
 
 
 class EtudiantForm(forms.ModelForm):
@@ -45,15 +101,25 @@ class EtudiantForm(forms.ModelForm):
         model = Etudiant
         fields = ["filiere", "promotion", "est_actif"]
         widgets = {
-            "filiere": forms.Select(attrs={"class": "form-select"}),
             "promotion": forms.NumberInput(attrs={"class": "form-control"}),
             "est_actif": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
 
     def __init__(self, *args, utilisateur=None, **kwargs):
         super().__init__(*args, **kwargs)
+        filiere_field = self.fields["filiere"]
+        filiere_field.widget.attrs.update({"class": "form-select"})
+        filiere_field.empty_label = "— Sélectionnez une filière —"
+
         if utilisateur and not utilisateur.a_acces_global:
-            self.fields["filiere"].queryset = Filiere.objects.filter(departement__in=utilisateur.departements_geres())
+            geres = utilisateur.departements_geres()
+            if geres.exists():
+                filiere_field.queryset = Filiere.objects.filter(departement__in=geres)
+            else:
+                filiere_field.queryset = Filiere.objects.none()
+                filiere_field.help_text = "Aucun département rattaché à votre compte."
+        else:
+            filiere_field.queryset = Filiere.objects.filter(est_active=True)
 
 
 class InscriptionForm(forms.ModelForm):
@@ -68,14 +134,22 @@ class InscriptionForm(forms.ModelForm):
 
     def __init__(self, *args, utilisateur=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["etudiant"].empty_label = "— Sélectionnez un étudiant —"
+        self.fields["cours"].empty_label = "— Sélectionnez un cours —"
+        self.fields["annee_academique"].empty_label = "— Sélectionnez une année —"
+
         if utilisateur and not utilisateur.a_acces_global:
             departements = utilisateur.departements_geres()
-            self.fields["etudiant"].queryset = Etudiant.objects.filter(filiere__departement__in=departements)
+            self.fields["etudiant"].queryset = Etudiant.objects.filter(
+                filiere__departement__in=departements
+            ).select_related("utilisateur", "filiere")
             self.fields["cours"].queryset = Cours.objects.filter(departement__in=departements)
 
     def clean(self):
         cleaned = super().clean()
-        instance = Inscription(**{k: v for k, v in cleaned.items() if k in ["etudiant", "cours", "annee_academique"]})
+        instance = Inscription(**{
+            k: v for k, v in cleaned.items() if k in ["etudiant", "cours", "annee_academique"]
+        })
         instance.pk = self.instance.pk
         instance.clean()
         return cleaned
@@ -100,4 +174,6 @@ class NoteForm(forms.ModelForm):
             if cours_fige is not None:
                 self.fields["cours"].initial = cours_fige
                 self.fields["cours"].widget = forms.HiddenInput()
-                self.fields["etudiant"].queryset = Etudiant.objects.filter(inscriptions__cours=cours_fige).distinct()
+                self.fields["etudiant"].queryset = Etudiant.objects.filter(
+                    inscriptions__cours=cours_fige
+                ).distinct()
