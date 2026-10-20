@@ -1,39 +1,195 @@
 {% extends "base.html" %}
-{% block titre %}Tableau de bord{% endblock %}
+{% load humanize %}
+{% block titre %}Tableau de bord — Direction{% endblock %}
+
 {% block contenu %}
-<div class="hero-banner">
-  <h1>Vue d'ensemble de l'université</h1>
-  <div class="subtitle">{{ role_label }} — {{ user.get_full_name|default:user.username }}</div>
-  <div class="hero-meta">
-    <div class="item"><strong>{{ nb_facultes }}</strong>Facultés</div>
-    <div class="item"><strong>{{ nb_departements }}</strong>Départements</div>
-    <div class="item"><strong>{{ nb_etudiants }}</strong>Étudiants</div>
-    <div class="item"><strong>{{ nb_personnel }}</strong>Personnel</div>
+
+<section class="up-hero mb-4">
+  <h1>Tableau de bord</h1>
+  <p>
+    Vue d'ensemble de la plateforme — <strong style="color: var(--up-brand-light);">{{ role_label }}</strong>
+  </p>
+  <div class="d-flex flex-wrap gap-4 mt-3" style="position: relative;">
+    <div>
+      <div style="font-family: var(--up-font-display); font-size: 1.15rem; font-weight: 700; color: var(--up-brand-light);">
+        {{ nb_etudiants|intcomma }}
+      </div>
+      <div style="font-size: .78rem; color: rgba(255,255,255,.65);">Étudiants actifs</div>
+    </div>
+    <div>
+      <div style="font-family: var(--up-font-display); font-size: 1.15rem; font-weight: 700; color: var(--up-brand-light);">
+        {{ nb_facultes }}
+      </div>
+      <div style="font-size: .78rem; color: rgba(255,255,255,.65);">Facultés</div>
+    </div>
+    <div>
+      <div style="font-family: var(--up-font-display); font-size: 1.15rem; font-weight: 700; color: var(--up-brand-light);">
+        {{ nb_departements }}
+      </div>
+      <div style="font-size: .78rem; color: rgba(255,255,255,.65);">Départements</div>
+    </div>
+    <div>
+      <div style="font-family: var(--up-font-display); font-size: 1.15rem; font-weight: 700; color: var(--up-brand-light);">
+        {{ nb_personnel }}
+      </div>
+      <div style="font-size: .78rem; color: rgba(255,255,255,.65);">Personnel</div>
+    </div>
   </div>
-</div>
+</section>
 
-<h6 style="color:var(--muted); text-transform:uppercase; font-size:.75rem; letter-spacing:.05em; margin-bottom:.75rem; font-family:'Work Sans',sans-serif;">Accès rapide</h6>
-<div class="quick-tile-grid mb-4">
-  <a href="{% url 'academique:liste_facultes' %}" class="quick-tile"><span class="tile-icon" style="background:#16233F;"><i class="bi bi-bank"></i></span><span class="tile-label">Facultés</span><span class="tile-sub">Structure</span></a>
-  <a href="{% url 'academique:liste_departements' %}" class="quick-tile"><span class="tile-icon" style="background:#A9812F;"><i class="bi bi-diagram-3"></i></span><span class="tile-label">Départements</span><span class="tile-sub">Organisation</span></a>
-  <a href="{% url 'academique:liste_cours' %}" class="quick-tile"><span class="tile-icon" style="background:#2E7D4F;"><i class="bi bi-journal-bookmark"></i></span><span class="tile-label">Cours</span><span class="tile-sub">Offre académique</span></a>
-  <a href="{% url 'etudiants:liste_etudiants' %}" class="quick-tile"><span class="tile-icon" style="background:#A6332B;"><i class="bi bi-people"></i></span><span class="tile-label">Étudiants</span><span class="tile-sub">Dossiers</span></a>
-  <a href="{% url 'comptes:liste_utilisateurs' %}" class="quick-tile"><span class="tile-icon" style="background:#5B4B8A;"><i class="bi bi-person-badge"></i></span><span class="tile-label">Comptes</span><span class="tile-sub">Personnel</span></a>
-  <a href="{% url 'rapports:centre_rapports' %}" class="quick-tile"><span class="tile-icon" style="background:#0d6efd;"><i class="bi bi-printer"></i></span><span class="tile-label">Rapports</span><span class="tile-sub">Impressions</span></a>
-</div>
 
-<div class="panel">
-  <div class="panel-head"><i class="bi bi-clock-history"></i> Activité récente</div>
-  <div>
-    {% for a in activites_recentes %}
-    <div class="feed-row">
-      <span class="feed-icon" style="background:var(--brand);"><i class="bi bi-dot"></i></span>
-      <div class="feed-main">
-        <div class="feed-title">{{ a.get_action_display }} — {{ a.type_objet }}{% if a.objet_repr %} · {{ a.objet_repr }}{% endif %}</div>
-        <div class="feed-sub">{{ a.utilisateur|default:"Système" }} · {{ a.horodatage|date:"d/m/Y H:i" }}</div>
+<section class="up-grid-stats mb-4">
+  <div class="up-stat">
+    <div class="up-stat__icon" style="background: linear-gradient(135deg,#16233F,#24365E);">
+      <i class="bi bi-bank2"></i>
+    </div>
+    <div class="up-stat__body">
+      <span class="up-stat__value">{{ nb_facultes }}</span>
+      <span class="up-stat__label">Facultés actives</span>
+    </div>
+  </div>
+
+  <div class="up-stat">
+    <div class="up-stat__icon" style="background: linear-gradient(135deg,#8B6A26,#A9812F);">
+      <i class="bi bi-diagram-3"></i>
+    </div>
+    <div class="up-stat__body">
+      <span class="up-stat__value">{{ nb_departements }}</span>
+      <span class="up-stat__label">Départements</span>
+    </div>
+  </div>
+
+  <div class="up-stat">
+    <div class="up-stat__icon" style="background: linear-gradient(135deg,#047857,#10B981);">
+      <i class="bi bi-people-fill"></i>
+    </div>
+    <div class="up-stat__body">
+      <span class="up-stat__value">{{ nb_etudiants|intcomma }}</span>
+      <span class="up-stat__label">Étudiants inscrits</span>
+    </div>
+  </div>
+
+  <div class="up-stat">
+    <div class="up-stat__icon" style="background: linear-gradient(135deg,#B45309,#D97706);">
+      <i class="bi bi-person-badge"></i>
+    </div>
+    <div class="up-stat__body">
+      <span class="up-stat__value">{{ nb_personnel }}</span>
+      <span class="up-stat__label">Membres du personnel</span>
+    </div>
+  </div>
+</section>
+
+
+<div class="row g-4">
+
+  {# ─── Colonne gauche : accès rapides ─── #}
+  <div class="col-lg-5">
+    <div class="up-panel h-100">
+      <div class="up-panel__head">
+        <i class="bi bi-grid" style="color: var(--up-brand);"></i>
+        Accès rapides
+      </div>
+      <div class="up-panel__body">
+        <div class="up-grid-tiles">
+          <a href="{% url 'academique:liste_facultes' %}" class="up-tile">
+            <span class="up-tile__icon" style="background: linear-gradient(135deg,#16233F,#24365E);">
+              <i class="bi bi-bank2"></i>
+            </span>
+            <span class="up-tile__label">Facultés</span>
+          </a>
+          <a href="{% url 'academique:liste_departements' %}" class="up-tile">
+            <span class="up-tile__icon" style="background: linear-gradient(135deg,#8B6A26,#A9812F);">
+              <i class="bi bi-diagram-3"></i>
+            </span>
+            <span class="up-tile__label">Départements</span>
+          </a>
+          <a href="{% url 'academique:liste_cours' %}" class="up-tile">
+            <span class="up-tile__icon" style="background: linear-gradient(135deg,#1E40AF,#3B82F6);">
+              <i class="bi bi-journal-bookmark"></i>
+            </span>
+            <span class="up-tile__label">Cours</span>
+          </a>
+          <a href="{% url 'etudiants:liste_etudiants' %}" class="up-tile">
+            <span class="up-tile__icon" style="background: linear-gradient(135deg,#047857,#10B981);">
+              <i class="bi bi-people"></i>
+            </span>
+            <span class="up-tile__label">Étudiants</span>
+          </a>
+          <a href="{% url 'comptes:liste_utilisateurs' %}" class="up-tile">
+            <span class="up-tile__icon" style="background: linear-gradient(135deg,#B91C1C,#DC2626);">
+              <i class="bi bi-person-gear"></i>
+            </span>
+            <span class="up-tile__label">Comptes</span>
+          </a>
+          <a href="{% url 'rapports:centre_rapports' %}" class="up-tile">
+            <span class="up-tile__icon" style="background: linear-gradient(135deg,#6D28D9,#8B5CF6);">
+              <i class="bi bi-printer"></i>
+            </span>
+            <span class="up-tile__label">Rapports</span>
+          </a>
+        </div>
       </div>
     </div>
-    {% empty %}<div class="empty-state"><i class="bi bi-inbox"></i>Aucune activité récente.</div>{% endfor %}
   </div>
+
+  <div class="col-lg-7">
+    <div class="up-panel h-100">
+      <div class="up-panel__head">
+        <i class="bi bi-clock-history" style="color: var(--up-brand);"></i>
+        Activité récente
+        {% if user.est_admin_systeme or user.role == 'DIRECTEUR_ACADEMIQUE' %}
+          <a href="{% url 'comptes:historique' %}"
+             class="ms-auto btn btn-sm btn-outline-brand">
+            Tout voir
+          </a>
+        {% endif %}
+      </div>
+
+      {% if activites_recentes %}
+      <div>
+        {% for a in activites_recentes %}
+        <div class="up-feed-row">
+          <div class="up-feed-row__icon
+            {% if a.action == 'AJOUT' %}bg-success
+            {% elif a.action == 'MODIFICATION' %}bg-primary
+            {% elif a.action == 'SUPPRESSION' %}bg-danger
+            {% elif a.action == 'CONNEXION' %}bg-info
+            {% else %}bg-secondary{% endif %}">
+            <i class="bi
+              {% if a.action == 'AJOUT' %}bi-plus-lg
+              {% elif a.action == 'MODIFICATION' %}bi-pencil
+              {% elif a.action == 'SUPPRESSION' %}bi-trash
+              {% elif a.action == 'CONNEXION' %}bi-box-arrow-in-right
+              {% elif a.action == 'DECONNEXION' %}bi-box-arrow-right
+              {% elif a.action == 'RECHERCHE' %}bi-search
+              {% elif a.action == 'DESACTIVATION' %}bi-toggle-off
+              {% else %}bi-circle{% endif %}"></i>
+          </div>
+          <div class="flex-grow-1 min-w-0">
+            <div class="up-feed-row__title">
+              {{ a.utilisateur.get_full_name|default:a.utilisateur.username|default:"Système" }}
+              — {{ a.get_action_display }}
+            </div>
+            <div class="up-feed-row__sub">
+              {{ a.type_objet }}{% if a.objet_repr %} · {{ a.objet_repr|truncatechars:60 }}{% endif %}
+            </div>
+          </div>
+          <div class="text-nowrap small text-muted">
+            {{ a.horodatage|date:"d/m H:i" }}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="up-empty">
+        <i class="bi bi-inbox"></i>
+        <div>Aucune activité enregistrée pour le moment.</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
 </div>
+
 {% endblock %}
