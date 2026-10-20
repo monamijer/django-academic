@@ -25,8 +25,6 @@ def valider_telephone(valeur):
         )
 
 
-# Réglages communs : le navigateur ne doit jamais pré-remplir un champ
-# administratif (cause du "superadmin suggéré" par autofill).
 _ADMIN_AUTOCOMPLETE = {"autocomplete": "off", "spellcheck": "false"}
 
 
@@ -106,8 +104,11 @@ class UtilisateurForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["faculte"].empty_label = "— Aucune —"
-        self.fields["departement"].empty_label = "— Aucun —"
+        # Défensif : les sous-classes peuvent avoir retiré ces champs de Meta.
+        if "faculte" in self.fields:
+            self.fields["faculte"].empty_label = "— Aucune —"
+        if "departement" in self.fields:
+            self.fields["departement"].empty_label = "— Aucun —"
 
     def clean(self):
         cleaned = super().clean()
