@@ -2,9 +2,15 @@
 {% block titre %}{{ titre }}{% endblock %}
 {% block contenu %}
 <div class="page-head"><div><h1>{{ titre }}</h1></div></div>
-<div class="panel col-md-7" style="padding:1.5rem;">
-  <form method="post">
+<div class="panel col-md-8" style="padding:1.5rem;">
+  <form method="post" autocomplete="off">
     {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {% for err in form.non_field_errors %}<div>{{ err }}</div>{% endfor %}
+      </div>
+    {% endif %}
+
     <div class="row">
     {% for field in form %}
       <div class="col-md-6 mb-3 {% if field.field.widget.input_type == 'checkbox' %}form-check{% endif %}">
@@ -13,10 +19,16 @@
         {% else %}
           <label class="form-label">{{ field.label }}</label>{{ field }}
         {% endif %}
-        {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        {% if field.help_text %}
+          <div class="form-text small">{{ field.help_text }}</div>
+        {% endif %}
+        {% for error in field.errors %}
+          <div class="text-danger small">{{ error }}</div>
+        {% endfor %}
       </div>
     {% endfor %}
     </div>
+
     <button class="btn btn-brand btn-icon"><i class="bi bi-check-lg"></i> Enregistrer</button>
     <a href="{% url 'etudiants:liste_etudiants' %}" class="btn btn-outline-secondary">Annuler</a>
   </form>
