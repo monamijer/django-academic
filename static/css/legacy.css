@@ -1,0 +1,479 @@
+/* ═══════════════════════════════════════════════════════════
+   LEGACY BRIDGE — pont temporaire entre les anciennes classes
+   (panel, page-head, tag-ok, person-grid, ...) et le nouveau
+   système (up-panel, up-page-head, up-tag--ok, up-grid-cards).
+   À supprimer une fois tous les templates migrés.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────
+   PAGE-HEAD (ancien) → équivalent up-page-head
+   ───────────────────────────────────────────────────────────── */
+.page-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.page-head h1 {
+  font-size: 1.7rem;
+  margin: 0;
+}
+
+.page-head .subtitle {
+  color: var(--up-muted);
+  font-size: .9rem;
+  font-weight: 500;
+  margin-top: .2rem;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   PANEL (ancien) → équivalent up-panel
+   ───────────────────────────────────────────────────────────── */
+.panel {
+  background: var(--up-card);
+  border: 1px solid var(--up-line);
+  border-radius: var(--up-radius);
+  box-shadow: var(--up-shadow-xs);
+}
+
+.panel-head {
+  padding: .9rem 1.15rem;
+  border-bottom: 1px solid var(--up-line);
+  font-family: var(--up-font-display);
+  font-weight: 600;
+  font-size: .98rem;
+  color: var(--up-ink);
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   STAT-ROW & STAT-CARD (anciens)
+   ───────────────────────────────────────────────────────────── */
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.stat-card {
+  background: var(--up-card);
+  border: 1px solid var(--up-line);
+  border-radius: var(--up-radius);
+  padding: 1.15rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: var(--up-shadow-xs);
+  transition: box-shadow .18s ease, border-color .18s ease;
+}
+
+.stat-card:hover {
+  box-shadow: var(--up-shadow-sm);
+  border-color: var(--up-line-strong);
+}
+
+.stat-card .icon-circle {
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.stat-card .value {
+  font-family: var(--up-font-display);
+  font-size: 1.65rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--up-ink);
+}
+
+.stat-card .label {
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--up-muted);
+  margin-top: .15rem;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   HERO-BANNER (ancien) → équivalent up-hero
+   ───────────────────────────────────────────────────────────── */
+.hero-banner {
+  background: linear-gradient(120deg, var(--up-ink) 0%, var(--up-ink-soft) 100%);
+  color: #fff;
+  border-radius: var(--up-radius-lg);
+  padding: 1.75rem 2rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-banner::after {
+  content: "";
+  position: absolute;
+  right: -60px;
+  top: -80px;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(169, 129, 47, .28) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-banner h1 {
+  color: #fff;
+  margin: 0;
+  font-size: 1.7rem;
+  position: relative;
+}
+
+.hero-banner .subtitle {
+  color: rgba(255, 255, 255, .75);
+  font-size: .92rem;
+  margin-top: .3rem;
+  font-weight: 500;
+  position: relative;
+}
+
+.hero-banner .hero-meta {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 1.1rem;
+  flex-wrap: wrap;
+  position: relative;
+}
+
+.hero-banner .hero-meta .item {
+  font-size: .82rem;
+  color: rgba(255, 255, 255, .72);
+}
+
+.hero-banner .hero-meta .item strong {
+  display: block;
+  color: var(--up-brand-light);
+  font-family: var(--up-font-display);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   QUICK-TILE-GRID & QUICK-TILE (anciens)
+   ───────────────────────────────────────────────────────────── */
+.quick-tile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: .85rem;
+}
+
+.quick-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .55rem;
+  padding: 1.1rem 1rem;
+  background: var(--up-card);
+  border: 1px solid var(--up-line);
+  border-radius: var(--up-radius);
+  text-decoration: none;
+  color: var(--up-ink);
+  text-align: center;
+  transition: all .15s ease;
+}
+
+.quick-tile:hover {
+  border-color: var(--up-brand);
+  box-shadow: var(--up-shadow-sm);
+  color: var(--up-ink);
+  transform: translateY(-1px);
+}
+
+.quick-tile .tile-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  color: #fff;
+}
+
+.quick-tile .tile-label {
+  font-weight: 600;
+  font-size: .85rem;
+}
+
+.quick-tile .tile-sub {
+  font-size: .72rem;
+  color: var(--up-muted);
+  font-weight: 500;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   FEED-ROW (ancien)
+   ───────────────────────────────────────────────────────────── */
+.feed-row {
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  padding: .75rem 1.15rem;
+  border-bottom: 1px solid var(--up-line);
+}
+
+.feed-row:last-child {
+  border-bottom: none;
+}
+
+.feed-row:hover {
+  background: #FAFBFC;
+}
+
+.feed-row .feed-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .9rem;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.feed-row .feed-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.feed-row .feed-title {
+  font-size: .87rem;
+  font-weight: 600;
+  color: var(--up-text);
+}
+
+.feed-row .feed-sub {
+  font-size: .75rem;
+  color: var(--up-muted);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   EMPTY-STATE (ancien)
+   ───────────────────────────────────────────────────────────── */
+.empty-state {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  color: var(--up-muted);
+}
+
+.empty-state i {
+  font-size: 1.8rem;
+  opacity: .4;
+  display: block;
+  margin-bottom: .5rem;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   PERSON-GRID & PERSON-CARD (anciens)
+   ───────────────────────────────────────────────────────────── */
+.person-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.person-card {
+  background: var(--up-card);
+  border: 1px solid var(--up-line);
+  border-radius: var(--up-radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.person-card:hover {
+  border-color: var(--up-brand);
+  box-shadow: var(--up-shadow-md);
+  color: inherit;
+}
+
+.person-card .swatch {
+  height: 5px;
+  width: 100%;
+  background: var(--up-brand);
+}
+
+.person-card .body {
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  flex: 1;
+}
+
+.person-card .cat-tag {
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--up-muted);
+}
+
+.person-card .name {
+  font-family: var(--up-font-display);
+  font-weight: 600;
+  font-size: 1.02rem;
+  line-height: 1.25;
+  color: var(--up-ink);
+}
+
+.person-card .ref {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: .72rem;
+  color: var(--up-muted);
+}
+
+.person-card .tags {
+  display: flex;
+  gap: .3rem;
+  flex-wrap: wrap;
+  margin-top: .15rem;
+}
+
+.person-card .footer-actions {
+  border-top: 1px solid var(--up-line);
+  padding: .6rem .9rem;
+  display: flex;
+  gap: .4rem;
+  justify-content: flex-end;
+  background: #FAFBFC;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   TAG (ancien) → équivalent up-tag--*
+   ───────────────────────────────────────────────────────────── */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: .28rem;
+  padding: .18rem .55rem;
+  border-radius: 100px;
+  font-size: .7rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.tag-ok { background: var(--up-ok-bg); color: var(--up-ok); }
+.tag-warn { background: var(--up-warn-bg); color: var(--up-warn); }
+.tag-bad { background: var(--up-bad-bg); color: var(--up-bad); }
+.tag-muted { background: #EDF0F3; color: var(--up-muted); }
+
+/* ─────────────────────────────────────────────────────────────
+   TABLE-PANEL (ancien wrapper de table)
+   ───────────────────────────────────────────────────────────── */
+.table-panel {
+  background: var(--up-card);
+  border: 1px solid var(--up-line);
+  border-radius: var(--up-radius);
+  box-shadow: var(--up-shadow-xs);
+  overflow: hidden;
+}
+
+.table-panel table {
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+}
+
+.table-panel thead th {
+  background: #FAFBFC;
+  color: var(--up-muted);
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  padding: .75rem 1rem;
+  border-bottom: 1px solid var(--up-line);
+  text-align: left;
+}
+
+.table-panel tbody td {
+  padding: .8rem 1rem;
+  font-size: .88rem;
+  border-bottom: 1px solid var(--up-line);
+  vertical-align: middle;
+}
+
+.table-panel tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table-panel tbody tr:hover {
+  background: #FAFBFC;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   FILTER-BAR (ancien)
+   ───────────────────────────────────────────────────────────── */
+.filter-bar {
+  display: flex;
+  gap: .6rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.15rem;
+  background: var(--up-card);
+  border: 1px solid var(--up-line);
+  border-radius: var(--up-radius);
+  box-shadow: var(--up-shadow-xs);
+}
+
+.filter-bar .form-control,
+.filter-bar .form-select {
+  max-width: 280px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   BOUTONS de secours (btn-icon, icon-btn)
+   ───────────────────────────────────────────────────────────── */
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+}
+
+.icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--up-line);
+  background: #fff;
+  color: var(--up-muted);
+  text-decoration: none;
+  transition: all .15s ease;
+}
+
+.icon-btn:hover {
+  border-color: var(--up-brand);
+  color: var(--up-brand-dark);
+  background: var(--up-paper);
+}
+
+.icon-btn.danger:hover {
+  border-color: var(--up-bad);
+  color: var(--up-bad);
+  background: var(--up-bad-bg);
+}
