@@ -185,36 +185,35 @@ a{color:var(--brand-dark);}
 </div>
 <script>
 // Boutons "+ Ajouter" à côté des selects qui portent data-add-url.
-// Le clic ouvre le formulaire cible dans un nouvel onglet, avec un
-// paramètre ?return=<url_courante> pour revenir à la saisie en cours.
+// On construit un <a target="_blank"> simple au lieu de window.open(),
+// pour éviter les blocages de popup et les erreurs de protocole.
 document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('select[data-add-url]').forEach(function (select) {
     if (select.dataset.addInitialized === '1') return;
+    const url = (select.dataset.addUrl || '').trim();
+    if (!url) return;
     select.dataset.addInitialized = '1';
 
-    var wrapper = document.createElement('div');
-    wrapper.className = 'd-flex gap-2 align-items-center mt-1';
+    const wrapper = document.createElement('div');
+    wrapper.className = 'd-flex gap-2 align-items-center mt-1 flex-wrap';
 
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'btn btn-outline-brand btn-sm btn-icon';
-    btn.innerHTML = '<i class="bi bi-plus-lg"></i> ' + (select.dataset.addLabel || 'Ajouter');
-    btn.addEventListener('click', function () {
-      var target = select.dataset.addUrl;
-      var returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
-      // Ouvre dans un nouvel onglet : l'utilisateur ne perd pas sa saisie.
-      window.open(target + '?return=' + returnUrl, '_blank', 'noopener');
-    });
+    const link = document.createElement('a');
+    link.className = 'btn btn-outline-brand btn-sm btn-icon';
+    link.href = url + '?return=' + encodeURIComponent(window.location.pathname + window.location.search);
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.innerHTML = '<i class="bi bi-plus-lg"></i> ' + (select.dataset.addLabel || 'Ajouter');
 
-    var hint = document.createElement('span');
+    const hint = document.createElement('span');
     hint.className = 'small text-muted';
-    hint.textContent = 'Ouvre un formulaire dans un nouvel onglet.';
+    hint.textContent = 'Ouvre un nouvel onglet.';
 
-    wrapper.appendChild(btn);
+    wrapper.appendChild(link);
     wrapper.appendChild(hint);
     select.insertAdjacentElement('afterend', wrapper);
   });
 });
+</script>
 document.addEventListener('DOMContentLoaded', function () {
   var params = new URLSearchParams(window.location.search);
   var returnUrl = params.get('return');
