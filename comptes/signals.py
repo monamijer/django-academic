@@ -25,25 +25,29 @@ def log_deconnexion(sender, request, user, **kwargs):
 
 @receiver(post_save, sender=Utilisateur)
 def creer_fiche_etudiant_si_manquante(sender, instance, created, **kwargs):
-    """Filet de sécurité : toute création (ou promotion) d'un Utilisateur
-    avec role=ETUDIANT doit s'accompagner d'une fiche Etudiant, même si le
-    compte a été créé par un chemin qui ignore EtudiantCreationForm
-    (admin Django, script, import, futur endpoint API).
+    """Filet de sécurité : tout Utilisateur role=ETUDIANT doit avoir une
+    fiche Etudiant. Créée provisoirement si aucun autre code ne s'en charge
+    (admin Django, script, import).
 
-    La fiche est créée avec un matricule provisoire « AUTO-xxx » et une
-    filière null-able — elle est à compléter par un secrétaire.
+    Si EtudiantCreationForm crée la fiche manuellement, il pose le flag
+    `_skip_etudiant_signal=True` sur l'instance AVANT save() pour que ce
+    signal ne double pas la création.
     """
     if instance.role != Utilisateur.Role.ETUDIANT:
+        return
+
+    # Respecte le flag posé par EtudiantCreationForm.save().
+    if getattr(instance, "_skip_etudiant_signal", False):
         return
 
     # Import différé pour éviter une dépendance circulaire au démarrage.
     from etudiants.models import Etudiant
 
-    if hasattr(instance, "fiche_etudiant"):
-        return  # Fiche déjà présente (créée par le form dédié).
+    # Si une fiche existe déjà, ne rien faire (ex: instance rechargée).
+    if Etudiant.objects.filter(utilisateur=instance).exists():
+        return
 
     with transaction.atomic():
-        # Matricule provisoire unique ; remplacé dès qu'un secrétaire édite.
         base = f"AUTO-{instance.pk}"
         matricule = base
         suffixe = 1
@@ -51,18 +55,18 @@ def creer_fiche_etudiant_si_manquante(sender, instance, created, **kwargs):
             suffixe += 1
             matricule = f"{base}-{suffixe}"
 
-        filiere_defaut = (
-            # Si l'utilisateur est rattaché à un département, on prend la
-            # première filière active ; sinon None (à compléter plus tard).
-            __import__("academique.models", fromlist=["Filiere"]).Filiere.objects
-            .filter(departement=instance.departement, est_active=True)
-            .first()
-            if instance.departement_id else None
-        )
+        filiere_defaut = None
+        if instance.departement_id:
+            from academique.models import Filiere
+            filiere_defaut = (
+                Filiere.objects
+                .filter(departement=instance.departement, est_active=True)
+                .first()
+            )
 
         Etudiant.objects.create(
             utilisateur=instance,
             matricule=matricule,
-            filiere=filiere_defaut,  # voir note ci-dessous
-            promotion=0,
+            filiere=filiere_defaut,
+            promotion=None,
         )
