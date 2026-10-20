@@ -1,0 +1,378 @@
+/* ═══════════════════════════════════════════════════════════
+   COMPONENTS — panels, cards, stats, badges, boutons, feed
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────
+   PANEL — bloc blanc avec ombre très douce (base WP premium)
+   ───────────────────────────────────────────────────────────── */
+.up-panel {
+  background: var(--up-card);
+  border: 1px solid var(--up-line);
+  border-radius: var(--up-radius);
+  box-shadow: var(--up-shadow-xs);
+}
+
+.up-panel__head {
+  padding: .9rem 1.15rem;
+  border-bottom: 1px solid var(--up-line);
+  font-family: var(--up-font-display);
+  font-weight: 600;
+  font-size: .98rem;
+  color: var(--up-ink);
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.up-panel__body {
+  padding: 1.15rem;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   STAT CARDS — chiffre clé + icône
+   ───────────────────────────────────────────────────────────── */
+.up-stat {
+  background: var(--up-card);
+  border: 1px solid var(--up-line);
+  border-radius: var(--up-radius);
+  padding: 1.15rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: var(--up-shadow-xs);
+  transition: box-shadow .18s ease, border-color .18s ease;
+}
+
+.up-stat:hover {
+  box-shadow: var(--up-shadow-sm);
+  border-color: var(--up-line-strong);
+}
+
+.up-stat__icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.up-stat__body {
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+}
+
+.up-stat__value {
+  font-family: var(--up-font-display);
+  font-size: 1.65rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--up-ink);
+}
+
+.up-stat__label {
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--up-muted);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   PERSON CARD — étudiant / prof / utilisateur
+   ───────────────────────────────────────────────────────────── */
+.up-person {
+  background: var(--up-card);
+  border: 1px solid var(--up-line);
+  border-radius: var(--up-radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.up-person:hover {
+  border-color: var(--up-brand);
+  box-shadow: var(--up-shadow-md);
+  color: inherit;
+}
+
+.up-person__swatch {
+  height: 5px;
+  width: 100%;
+  background: var(--up-brand);
+}
+
+.up-person__body {
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  flex: 1;
+}
+
+.up-person__cat {
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--up-muted);
+}
+
+.up-person__name {
+  font-family: var(--up-font-display);
+  font-weight: 600;
+  font-size: 1.02rem;
+  line-height: 1.25;
+  color: var(--up-ink);
+}
+
+.up-person__ref {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: .72rem;
+  color: var(--up-muted);
+}
+
+.up-person__tags {
+  display: flex;
+  gap: .3rem;
+  flex-wrap: wrap;
+  margin-top: .15rem;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   QUICK TILE — accès rapide carré
+   ───────────────────────────────────────────────────────────── */
+.up-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .55rem;
+  padding: 1.1rem 1rem;
+  background: var(--up-card);
+  border: 1px solid var(--up-line);
+  border-radius: var(--up-radius);
+  text-decoration: none;
+  color: var(--up-ink);
+  text-align: center;
+  transition: all .15s ease;
+}
+
+.up-tile:hover {
+  border-color: var(--up-brand);
+  box-shadow: var(--up-shadow-sm);
+  color: var(--up-ink);
+  transform: translateY(-1px);
+}
+
+.up-tile__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  color: #fff;
+}
+
+.up-tile__label {
+  font-weight: 600;
+  font-size: .85rem;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   TAGS / BADGES
+   ───────────────────────────────────────────────────────────── */
+.up-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: .28rem;
+  padding: .18rem .55rem;
+  border-radius: 100px;
+  font-size: .7rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.up-tag--ok { background: var(--up-ok-bg); color: var(--up-ok); }
+.up-tag--warn { background: var(--up-warn-bg); color: var(--up-warn); }
+.up-tag--bad { background: var(--up-bad-bg); color: var(--up-bad); }
+.up-tag--info { background: var(--up-info-bg); color: var(--up-info); }
+.up-tag--muted { background: #EDF0F3; color: var(--up-muted); }
+
+/* ─────────────────────────────────────────────────────────────
+   BOUTONS — surcouche Bootstrap
+   ───────────────────────────────────────────────────────────── */
+.btn {
+  font-weight: 600;
+  font-size: .86rem;
+  border-radius: var(--up-radius);
+  transition: all .15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+}
+
+.btn-brand {
+  background: var(--up-brand);
+  border: 1px solid var(--up-brand);
+  color: var(--up-ink-deep);
+}
+
+.btn-brand:hover,
+.btn-brand:focus {
+  background: var(--up-brand-dark);
+  border-color: var(--up-brand-dark);
+  color: #fff;
+}
+
+.btn-outline-brand {
+  background: #fff;
+  border: 1px solid var(--up-brand);
+  color: var(--up-brand-dark);
+}
+
+.btn-outline-brand:hover,
+.btn-outline-brand:focus {
+  background: var(--up-brand);
+  border-color: var(--up-brand);
+  color: var(--up-ink-deep);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   TABLE — WP premium
+   ───────────────────────────────────────────────────────────── */
+.up-table {
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+}
+
+.up-table thead th {
+  background: #FAFBFC;
+  color: var(--up-muted);
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  padding: .75rem 1rem;
+  border-bottom: 1px solid var(--up-line);
+  text-align: left;
+}
+
+.up-table tbody td {
+  padding: .8rem 1rem;
+  font-size: .88rem;
+  border-bottom: 1px solid var(--up-line);
+  vertical-align: middle;
+}
+
+.up-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.up-table tbody tr:hover {
+  background: #FAFBFC;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   FEED ROW — activité récente
+   ───────────────────────────────────────────────────────────── */
+.up-feed-row {
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  padding: .75rem 1.15rem;
+  border-bottom: 1px solid var(--up-line);
+}
+
+.up-feed-row:last-child {
+  border-bottom: none;
+}
+
+.up-feed-row:hover {
+  background: #FAFBFC;
+}
+
+.up-feed-row__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .9rem;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.up-feed-row__title {
+  font-size: .87rem;
+  font-weight: 600;
+  color: var(--up-text);
+}
+
+.up-feed-row__sub {
+  font-size: .75rem;
+  color: var(--up-muted);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   HERO BANNER — bloc navy en haut des dashboards
+   ───────────────────────────────────────────────────────────── */
+.up-hero {
+  background: linear-gradient(120deg, var(--up-ink) 0%, var(--up-ink-soft) 100%);
+  color: #fff;
+  border-radius: var(--up-radius-lg);
+  padding: 1.75rem 2rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.up-hero::after {
+  content: "";
+  position: absolute;
+  right: -60px;
+  top: -80px;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(169, 129, 47, .28) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.up-hero h1,
+.up-hero h2 {
+  color: #fff;
+  margin: 0;
+  position: relative;
+}
+
+.up-hero p {
+  color: rgba(255, 255, 255, .75);
+  margin: .35rem 0 0;
+  font-size: .92rem;
+  position: relative;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   EMPTY STATE
+   ───────────────────────────────────────────────────────────── */
+.up-empty {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  color: var(--up-muted);
+}
+
+.up-empty i {
+  font-size: 1.8rem;
+  opacity: .4;
+  display: block;
+  margin-bottom: .5rem;
+}

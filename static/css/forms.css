@@ -1,0 +1,118 @@
+/* ═══════════════════════════════════════════════════════════
+   FORMS — inputs, selects, validation, filter bar
+   ═══════════════════════════════════════════════════════════ */
+
+.form-label {
+  font-weight: 600;
+  font-size: .82rem;
+  color: var(--up-ink);
+  margin-bottom: .35rem;
+}
+
+.form-text {
+  font-size: .75rem;
+  color: var(--up-muted);
+}
+
+.form-control,
+.form-select {
+  border-radius: var(--up-radius);
+  border: 1px solid var(--up-line);
+  font-size: .88rem;
+  padding: .5rem .75rem;
+  color: var(--up-text);
+  background-color: #fff;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--up-brand);
+  box-shadow: 0 0 0 3px rgba(169, 129, 47, .15);
+  outline: none;
+}
+
+.form-control::placeholder {
+  color: var(--up-subtle);
+}
+
+.form-check-input {
+  border-color: var(--up-line-strong);
+  transition: background-color .15s ease, border-color .15s ease;
+}
+
+.form-check-input:checked {
+  background-color: var(--up-brand);
+  border-color: var(--up-brand);
+}
+
+.form-check-input:focus {
+  border-color: var(--up-brand);
+  box-shadow: 0 0 0 3px rgba(169, 129, 47, .15);
+}
+
+.form-check-label {
+  font-size: .86rem;
+  font-weight: 500;
+}
+
+/* Champ en erreur */
+.form-control.is-invalid,
+.form-select.is-invalid {
+  border-color: var(--up-bad);
+}
+
+.form-control.is-invalid:focus,
+.form-select.is-invalid:focus {
+  box-shadow: 0 0 0 3px rgba(185, 28, 28, .12);
+}
+
+/* Message d'erreur inline */
+.up-field-error {
+  color: var(--up-bad);
+  font-size: .78rem;
+  margin-top: .25rem;
+}
+
+/* Filter bar (barre de recherche au-dessus des listes) */
+.up-filter-bar {
+  display: flex;
+  gap: .6rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.15rem;
+  background: var(--up-card);
+  border: 1px solid var(--up-line);
+  border-radius: var(--up-radius);
+  box-shadow: var(--up-shadow-xs);
+}
+
+.up-filter-bar .form-control,
+.up-filter-bar .form-select {
+  max-width: 280px;
+}
+
+/* Layout de formulaire administratif */
+.up-form-panel {
+  background: var(--up-card);
+  border: 1px solid var(--up-line);
+  border-radius: var(--up-radius);
+  box-shadow: var(--up-shadow-xs);
+  padding: 1.75rem;
+  max-width: 780px;
+}
+
+.up-form-panel .row {
+  row-gap: .25rem;
+}
+
+/* Bouton "+ Ajouter" injecté sous un select */
+.up-add-hint {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  flex-wrap: wrap;
+  margin-top: .4rem;
+  font-size: .78rem;
+  color: var(--up-muted);
+}

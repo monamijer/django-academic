@@ -1,0 +1,139 @@
+/* ═══════════════════════════════════════════════════════════
+   DESIGN TOKENS — variables, reset minimal, typographie
+   Surcharge Bootstrap avec la palette UNIVPILOT.
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* Palette primaire */
+  --up-ink: #16233F;
+  --up-ink-deep: #0F1729;
+  --up-ink-soft: #24365E;
+  --up-brand: #A9812F;
+  --up-brand-light: #C9A24A;
+  --up-brand-dark: #8B6A26;
+
+  /* Surfaces */
+  --up-paper: #F7F8FA;
+  --up-card: #FFFFFF;
+  --up-line: #E5E8EE;
+  --up-line-strong: #D4D9E3;
+
+  /* Texte */
+  --up-text: #1D2433;
+  --up-muted: #6B7280;
+  --up-subtle: #9CA3AF;
+
+  /* États */
+  --up-ok: #047857;
+  --up-ok-bg: #ECFDF5;
+  --up-warn: #B45309;
+  --up-warn-bg: #FEF3C7;
+  --up-bad: #B91C1C;
+  --up-bad-bg: #FEE2E2;
+  --up-info: #1E40AF;
+  --up-info-bg: #DBEAFE;
+
+  /* Dimensions */
+  --up-radius: 8px;
+  --up-radius-lg: 12px;
+  --up-topbar-h: 60px;
+  --up-navbar-h: 48px;
+
+  /* Ombres */
+  --up-shadow-xs: 0 1px 2px rgba(22, 35, 63, .04);
+  --up-shadow-sm: 0 1px 3px rgba(22, 35, 63, .06), 0 1px 2px rgba(22, 35, 63, .04);
+  --up-shadow-md: 0 4px 12px rgba(22, 35, 63, .08);
+  --up-shadow-lg: 0 12px 32px rgba(22, 35, 63, .12);
+
+  /* Typographie */
+  --up-font-display: 'Fraunces', Georgia, serif;
+  --up-font-body: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Surcharges Bootstrap */
+  --bs-body-font-family: var(--up-font-body);
+  --bs-body-color: var(--up-text);
+  --bs-body-bg: var(--up-paper);
+  --bs-border-color: var(--up-line);
+  --bs-primary: var(--up-brand);
+  --bs-primary-rgb: 169, 129, 47;
+  --bs-border-radius: var(--up-radius);
+  --bs-border-radius-lg: var(--up-radius-lg);
+}
+
+/* Reset ciblé */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--up-paper);
+  color: var(--up-text);
+  font-family: var(--up-font-body);
+  font-size: 14.5px;
+  line-height: 1.55;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Titres éditoriaux */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--up-font-display);
+  font-weight: 600;
+  letter-spacing: -.015em;
+  color: var(--up-ink);
+  line-height: 1.25;
+}
+
+h1 { font-size: 1.75rem; }
+h2 { font-size: 1.4rem; }
+h3 { font-size: 1.2rem; }
+
+/* Liens sobres par défaut */
+a {
+  color: var(--up-brand-dark);
+  text-decoration: none;
+  transition: color .15s ease;
+}
+
+a:hover {
+  color: var(--up-brand);
+}
+
+/* Sélection */
+::selection {
+  background: var(--up-brand);
+  color: var(--up-ink-deep);
+}
+
+/* Utilitaires typographiques */
+.up-mono {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+.up-display {
+  font-family: var(--up-font-display);
+}
+
+/* Scrollbar premium (WebKit) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--up-line-strong);
+  border-radius: 5px;
+  border: 2px solid var(--up-paper);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--up-muted);
+}
