@@ -1,12 +1,21 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
+from django.urls import reverse
 
 from academique.models import Cours, Filiere
 from comptes.forms import UtilisateurCreationForm
 from comptes.models import Utilisateur
 
 from .models import Etudiant, Inscription, Note
+
+
+def _add_attr(url_name, label="Ajouter"):
+    try:
+        url = reverse(url_name)
+    except Exception:
+        url = ""
+    return {"data-add-url": url, "data-add-label": label}
 
 
 class EtudiantCreationForm(UtilisateurCreationForm):
@@ -36,7 +45,9 @@ class EtudiantCreationForm(UtilisateurCreationForm):
 
     def __init__(self, *args, utilisateur=None, **kwargs):
         super().__init__(*args, **kwargs)
-        # On retire les champs hérités non pertinents pour un étudiant.
+        # Ces champs ne font pas partie de Meta.fields, donc ils n'existent
+        # déjà plus dans self.fields. On utilise .pop() défensif au cas où
+        # une sous-classe réintroduirait un champ via Meta.
         for champ in ("role", "faculte", "departement", "est_actif_compte"):
             self.fields.pop(champ, None)
 
@@ -60,10 +71,7 @@ class EtudiantCreationForm(UtilisateurCreationForm):
                 .filter(est_active=True)
                 .select_related("departement")
             )
-            filiere_field.widget.attrs.update({
-                "data-add-url": "academique:creer_filiere",
-                "data-add-label": "Ajouter une filière",
-            })
+            filiere_field.widget.attrs.update(_add_attr("academique:creer_filiere", "Ajouter une filière"))
 
     def clean_matricule(self):
         matricule = self.cleaned_data["matricule"].strip()
@@ -78,7 +86,6 @@ class EtudiantCreationForm(UtilisateurCreationForm):
         return cleaned
 
     def save(self, commit=True):
-        """Crée le compte ET la fiche étudiant dans une même transaction."""
         if not commit:
             return super().save(commit=False)
 
@@ -125,6 +132,7 @@ class EtudiantForm(forms.ModelForm):
                 filiere_field.help_text = "Aucun département rattaché à votre compte."
         else:
             filiere_field.queryset = Filiere.objects.filter(est_active=True)
+            filiere_field.widget.attrs.update(_add_attr("academique:creer_filiere", "Ajouter une filière"))
 
 
 class InscriptionForm(forms.ModelForm):
