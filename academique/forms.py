@@ -1,14 +1,17 @@
 from django import forms
+from django.urls import reverse
 
 from .models import AnneeAcademique, Cours, Departement, Faculte, Filiere
 
-# Marqueur commun : tout widget portant data-add-target="url" est reconnu
-# par le JS global (voir base.html) pour afficher un bouton "+ Ajouter".
-def _add_attr(url_name):
-    return {
-        "data-add-url": url_name,
-        "data-add-label": "Ajouter",
-    }
+
+def _add_attr(url_name, label="Ajouter"):
+    """Renvoie les attributs HTML du select pour afficher un bouton
+    '+ Ajouter' qui pointe vers une URL RÉSOLUE (pas un nom Django)."""
+    try:
+        url = reverse(url_name)
+    except Exception:
+        url = ""
+    return {"data-add-url": url, "data-add-label": label}
 
 
 class FaculteForm(forms.ModelForm):
@@ -39,17 +42,13 @@ class DepartementForm(forms.ModelForm):
         faculte_field.widget.attrs.update({"class": "form-select"})
         faculte_field.empty_label = "— Sélectionnez une faculté —"
 
-        # Restreindre au périmètre SEULEMENT si l'utilisateur a réellement
-        # une faculté définie. Sinon (faculte_id=None) le filtre produirait
-        # un queryset vide : le select n'afficherait alors aucune option et
-        # resterait "unresponsive" — le bug d'origine.
         if utilisateur and not utilisateur.a_acces_global and utilisateur.faculte_id:
             faculte_field.queryset = Faculte.objects.filter(pk=utilisateur.faculte_id)
             faculte_field.initial = utilisateur.faculte_id
             faculte_field.disabled = True
         else:
             faculte_field.queryset = Faculte.objects.filter(est_active=True)
-            faculte_field.widget.attrs.update(_add_attr("academique:creer_faculte"))
+            faculte_field.widget.attrs.update(_add_attr("academique:creer_faculte", "Ajouter une faculté"))
 
 
 class FiliereForm(forms.ModelForm):
@@ -74,8 +73,6 @@ class FiliereForm(forms.ModelForm):
             if geres.exists():
                 dep_field.queryset = geres
             else:
-                # Périmètre non configuré : on retombe sur un queryset vide
-                # MAIS avec un message clair plutôt qu'un select muet.
                 dep_field.queryset = Departement.objects.none()
                 dep_field.help_text = (
                     "Votre compte n'est rattaché à aucun département. "
@@ -83,7 +80,7 @@ class FiliereForm(forms.ModelForm):
                 )
         else:
             dep_field.queryset = Departement.objects.filter(est_actif=True)
-            dep_field.widget.attrs.update(_add_attr("academique:creer_departement"))
+            dep_field.widget.attrs.update(_add_attr("academique:creer_departement", "Ajouter un département"))
 
 
 class CoursForm(forms.ModelForm):
@@ -108,10 +105,8 @@ class CoursForm(forms.ModelForm):
         dep_field.empty_label = "— Sélectionnez un département —"
 
         prof_field = self.fields["professeurs"]
-        prof_field.empty_label = None  # M2M : pas de choix vide
-        prof_field.help_text = (
-            "Astuce : maintenez Ctrl (Cmd sur Mac) pour sélectionner plusieurs professeurs."
-        )
+        prof_field.empty_label = None
+        prof_field.help_text = "Astuce : Ctrl (Cmd) pour sélectionner plusieurs professeurs."
         prof_field.queryset = Utilisateur.objects.filter(
             role__in=[
                 Utilisateur.Role.PROFESSEUR,
@@ -132,4 +127,4 @@ class CoursForm(forms.ModelForm):
                 )
         else:
             dep_field.queryset = Departement.objects.filter(est_actif=True)
-            dep_field.widget.attrs.update(_add_attr("academique:creer_departement"))
+            dep_field.widget.attrs.update(_add_attr("academique:creer_departement", "Ajouter un département"))
