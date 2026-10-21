@@ -6,7 +6,7 @@ from django.utils import timezone
 import re
 import unicodedata
 
-from academique.models import AnneeAcademique, Cours, Departement, Faculte, Filiere
+from academique.models import AnneeAcademique, Cours, Departement, Faculte, Filiere, Niveau
 from comptes.forms import UtilisateurCreationForm
 from comptes.models import Utilisateur
 
@@ -131,6 +131,12 @@ class EtudiantCreationForm(UtilisateurCreationForm):
         widget=forms.NumberInput(attrs={"class": "form-control"}),
         help_text="Année d'entrée (2020 à 2026).",
     )
+    niveau = forms.ChoiceField(
+        choices=Niveau.choices,
+        initial=Niveau.BAC1,
+        label="Niveau d'études",
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
 
     class Meta(UtilisateurCreationForm.Meta):
         fields = ["first_name", "last_name", "email", "telephone"]
@@ -201,6 +207,7 @@ class EtudiantCreationForm(UtilisateurCreationForm):
                     utilisateur=utilisateur,
                     matricule=generer_matricule(),
                     filiere=filiere,
+                    niveau=self.cleaned_data["niveau"],
                     promotion=self.cleaned_data["promotion"],
                 )
                 return utilisateur
@@ -237,8 +244,9 @@ class EtudiantForm(forms.ModelForm):
 
     class Meta:
         model = Etudiant
-        fields = ["promotion", "est_actif"]
+        fields = ["niveau", "promotion", "est_actif"]
         widgets = {
+            "niveau": forms.Select(attrs={"class": "form-select"}),
             "promotion": forms.NumberInput(attrs={
                 "class": "form-control", "min": 2020, "max": 2026,
             }),

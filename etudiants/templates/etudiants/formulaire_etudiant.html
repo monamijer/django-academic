@@ -85,6 +85,13 @@
       <i class="bi bi-card-text"></i> Fiche étudiant
     </h6>
     <div class="row">
+      {% if form.niveau %}
+      <div class="col-md-6 mb-3">
+        <label class="form-label">{{ form.niveau.label }}</label>
+        {{ form.niveau }}
+        {% for e in form.niveau.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      {% endif %}
       <div class="col-md-6 mb-3">
         <label class="form-label">{{ form.promotion.label }}</label>
         {{ form.promotion }}

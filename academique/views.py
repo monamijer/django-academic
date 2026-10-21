@@ -139,18 +139,31 @@ def modifier_filiere(request, pk):
 
 @login_required
 def liste_cours(request):
+    from academique.models import Niveau
+
     u = request.user
     q = request.GET.get("q", "").strip()
+    niveau = request.GET.get("niveau", "").strip()
+
     if u.role == u.Role.PROFESSEUR:
         cours = u.cours_enseignes.all()
     else:
         cours = Cours.objects.filter(departement__in=u.departements_geres()).select_related("departement")
+
     if q:
         cours = cours.filter(Q(nom__icontains=q) | Q(code__icontains=q))
         enregistrer_activite(u, "RECHERCHE", "Cours", details=f"Recherche: '{q}'")
+    if niveau:
+        cours = cours.filter(niveau=niveau)
+
     paginator = Paginator(cours.distinct(), 12)
     page = paginator.get_page(request.GET.get("page"))
-    return render(request, "academique/liste_cours.html", {"page_obj": page, "q": q})
+    return render(request, "academique/liste_cours.html", {
+        "page_obj": page,
+        "q": q,
+        "niveau": niveau,
+        "niveaux": Niveau.choices,
+    })
 
 @login_required
 def creer_cours(request):

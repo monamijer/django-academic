@@ -1,99 +1,183 @@
-{% extends "registre/base_registre.html" %}
-{% block titre %}Relevé de {{ user.get_full_name|default:user.username }}{% endblock %}
-{% block annee %}{% if annee %} · année {{ annee.libelle }}{% endif %}{% endblock %}
+{% extends "base.html" %}
+{% load humanize %}
+{% block titre %}Tableau de bord — Étudiant{% endblock %}
 
 {% block contenu %}
+
 {% if not fiche %}
-  <p class="notes__vide" style="padding:48px 0;">Aucune fiche étudiant n'est rattachée à ce compte. Adressez-vous au secrétariat.</p>
+  <div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle"></i>
+    Votre fiche étudiant n'est pas encore complétée. Contactez le secrétariat.
+  </div>
 {% else %}
-<div class="folio">
 
-  {# ─── 01 · IDENTITÉ ─────────────────────────────────────────── #}
-  <section class="colonne col-identite" aria-labelledby="r-identite">
-    <header class="rubrique"><span class="rubrique__no">01</span><h2 class="rubrique__titre" id="r-identite">Identité</h2></header>
-
-    <div class="portrait" role="img" aria-label="Emplacement de la photo d'identité">
-      <span class="portrait__initiales">{{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}</span>
+{# ═══════════════════════════════════════════════════════════
+   HERO — identité + moyenne + mention
+   ═══════════════════════════════════════════════════════════ #}
+<section class="up-hero mb-4">
+  <h1>Bonjour, {{ fiche.utilisateur.first_name|default:fiche.utilisateur.username }} 👋</h1>
+  <p>
+    {{ fiche.filiere.departement.faculte.nom|default:"—" }} ·
+    {{ fiche.filiere.departement.nom|default:"—" }} ·
+    {{ fiche.get_niveau_display|default:fiche.niveau }}
+    — Promotion {{ fiche.promotion|default:"—" }}
+  </p>
+  <div class="d-flex flex-wrap gap-4 mt-3" style="position: relative;">
+    <div>
+      <div style="font-family: var(--up-font-display); font-size: 1.3rem; font-weight: 700; color: var(--up-brand-light);">
+        {{ fiche.matricule }}
+      </div>
+      <div style="font-size: .78rem; color: rgba(255,255,255,.65);">Matricule</div>
     </div>
-    <p class="legende">photo d'identité · non fournie</p>
-
-    <h1 class="nom"><em>{{ user.first_name|default:user.username }}</em>{{ user.last_name }}</h1>
-    <span class="matricule">{{ fiche.matricule }}</span>
-
-    <dl class="registre-liste">
-      <div><dt>filière</dt><dd>{{ fiche.filiere.nom }}</dd></div>
-      <div><dt>département</dt><dd>{{ fiche.filiere.departement.nom }}</dd></div>
-      <div><dt>faculté</dt><dd>{{ fiche.filiere.departement.faculte.nom }}</dd></div>
-      <div><dt>promotion</dt><dd class="mono">{{ fiche.promotion }}</dd></div>
-      <div><dt>contact</dt><dd>{{ user.email|default:"—" }}</dd></div>
-    </dl>
-  </section>
-
-  {# ─── 02 · SEMAINE ──────────────────────────────────────────── #}
-  <section class="colonne col-semaine" aria-labelledby="r-semaine">
-    <header class="rubrique">
-      <span class="rubrique__no">02</span>
-      <h2 class="rubrique__titre" id="r-semaine">Semaine du {{ semaine.0.date|date:"j F" }}</h2>
-      <span class="rubrique__no" style="margin-left:auto;">{{ nb_seances }} séance{{ nb_seances|pluralize }}</span>
-    </header>
-
-    {% for jour in semaine %}
-    <article class="jour{% if jour.est_aujourdhui %} jour--aujourdhui{% endif %}">
-      <div class="jour__entete">
-        <h3 class="jour__nom">{{ jour.libelle }}</h3>
-        <span class="jour__date">{{ jour.date|date:"d.m" }}</span>
-        {% if jour.est_aujourdhui %}<span class="jour__marque">aujourd'hui</span>{% endif %}
+    {% if moyenne %}
+    <div>
+      <div style="font-family: var(--up-font-display); font-size: 1.3rem; font-weight: 700; color: var(--up-brand-light);">
+        {{ moyenne }} / 20
       </div>
-      {% for s in jour.seances %}
-      <div class="creneau">
-        <span class="creneau__heures">{{ s.heure_debut|time:"H:i" }}<br>{{ s.heure_fin|time:"H:i" }}</span>
-        <span class="creneau__cours">{{ s.cours.nom }}<span class="creneau__code">{{ s.cours.code }}</span></span>
-        <span class="creneau__salle">{{ s.salle|default:"—" }}</span>
+      <div style="font-size: .78rem; color: rgba(255,255,255,.65);">Moyenne générale</div>
+    </div>
+    {% endif %}
+    {% if mention %}
+    <div>
+      <div style="font-family: var(--up-font-display); font-size: 1.3rem; font-weight: 700; color: var(--up-brand-light);">
+        {{ mention }}
       </div>
-      {% empty %}
-      <p class="jour__vide">Aucune séance.</p>
+      <div style="font-size: .78rem; color: rgba(255,255,255,.65);">Mention</div>
+    </div>
+    {% endif %}
+    <div>
+      <div style="font-family: var(--up-font-display); font-size: 1.3rem; font-weight: 700; color: var(--up-brand-light);">
+        {{ nb_seances }}
+      </div>
+      <div style="font-size: .78rem; color: rgba(255,255,255,.65);">Séances cette semaine</div>
+    </div>
+  </div>
+</section>
+
+{# ═══════════════════════════════════════════════════════════
+   EMPLOI DU TEMPS — semaine
+   ═══════════════════════════════════════════════════════════ #}
+{% if annee %}
+<section class="up-panel mb-4">
+  <div class="up-panel__head">
+    <i class="bi bi-calendar-week" style="color: var(--up-brand);"></i>
+    Emploi du temps — semaine du {{ semaine.0.date|date:"d M Y" }}
+    <span class="ms-auto small text-muted">
+      Année {{ annee.libelle }}
+    </span>
+  </div>
+  <div class="up-panel__body">
+    <div class="row g-3">
+      {% for jour in semaine %}
+      <div class="col-md-6 col-lg-4">
+        <div class="p-3 h-100"
+             style="background: {% if jour.est_aujourdhui %}rgba(169,129,47,.08){% else %}#FAFBFC{% endif %};
+                    border: 1px solid {% if jour.est_aujourdhui %}var(--up-brand){% else %}var(--up-line){% endif %};
+                    border-radius: var(--up-radius);">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <strong style="color: var(--up-ink);">{{ jour.libelle }}</strong>
+            <span class="small text-muted">{{ jour.date|date:"d/m" }}</span>
+          </div>
+          {% for seance in jour.seances %}
+          <div class="small mb-2 pb-2" style="border-bottom: 1px dashed var(--up-line);">
+            <div class="fw-semibold" style="color: var(--up-ink);">{{ seance.cours.nom }}</div>
+            <div class="text-muted">
+              <i class="bi bi-clock"></i>
+              {{ seance.heure_debut|time:"H:i" }} — {{ seance.heure_fin|time:"H:i" }}
+              {% if seance.salle %} · {{ seance.salle }}{% endif %}
+            </div>
+          </div>
+          {% empty %}
+          <div class="small text-muted">Libre</div>
+          {% endfor %}
+        </div>
+      </div>
       {% endfor %}
-    </article>
-    {% endfor %}
-  </section>
+    </div>
+  </div>
+</section>
+{% endif %}
 
-  {# ─── 03 · RELEVÉ ───────────────────────────────────────────── #}
-  <section class="colonne col-notes" aria-labelledby="r-releve">
-    <header class="rubrique"><span class="rubrique__no">03</span><h2 class="rubrique__titre" id="r-releve">Relevé</h2></header>
+{# ═══════════════════════════════════════════════════════════
+   DERNIÈRES NOTES
+   ═══════════════════════════════════════════════════════════ #}
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="up-panel h-100">
+      <div class="up-panel__head">
+        <i class="bi bi-journal-check" style="color: var(--up-brand);"></i>
+        Dernières notes
+      </div>
+      {% if notes %}
+      <table class="up-table">
+        <thead>
+          <tr>
+            <th>Cours</th>
+            <th>Note</th>
+            <th>Statut</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for n in notes %}
+          <tr>
+            <td>
+              <div class="fw-semibold">{{ n.cours.nom }}</div>
+              <div class="small text-muted">{{ n.cours.code }}</div>
+            </td>
+            <td class="fw-bold">{{ n.valeur }} / 20</td>
+            <td>
+              {% if n.insuffisante %}
+                <span class="up-tag up-tag--bad"><i class="bi bi-exclamation-circle"></i> Insuffisant</span>
+              {% else %}
+                <span class="up-tag up-tag--ok"><i class="bi bi-check-circle"></i> Validé</span>
+              {% endif %}
+            </td>
+            <td class="small text-muted">{{ n.date_evaluation|date:"d/m/Y" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="up-empty">
+        <i class="bi bi-inbox"></i>
+        <div>Aucune note enregistrée pour le moment.</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
 
-    {% if moyenne is not None %}
-    <p class="moyenne">
-      <span class="moyenne__val" data-odometer="{{ moyenne|floatformat:2 }}">{{ moyenne|floatformat:2 }}</span>
-      <span class="moyenne__sur">/20</span>
-    </p>
-    <p class="mention">{{ mention }}<small>moyenne générale · {{ notes|length }} note{{ notes|length|pluralize }}</small></p>
-    {% else %}
-    <p class="moyenne"><span class="moyenne__val">—</span></p>
-    <p class="mention">Aucune note<small>moyenne non calculable</small></p>
-    {% endif %}
-
-    {% if notes %}
-    <table class="notes">
-      <caption class="sr-only">Dernières notes enregistrées</caption>
-      <thead><tr><th class="c-code" scope="col">code</th><th scope="col">cours</th><th class="c-note" scope="col">note</th></tr></thead>
-      <tbody>
-        {% for n in notes %}
-        <tr>
-          <td class="c-code">{{ n.cours.code }}</td>
-          <td class="c-cours">{{ n.cours.nom }}</td>
-          <td class="c-note{% if n.insuffisante %} c-note--basse{% endif %}">{{ n.valeur|floatformat:2 }}{% if n.insuffisante %}<sup>†</sup>{% endif %}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-      <tfoot><tr><td colspan="3">† inférieur à {{ seuil }} sur 20 · {{ notes|length }} dernière{{ notes|length|pluralize }} note{{ notes|length|pluralize }}</td></tr></tfoot>
-    </table>
-    {% else %}
-    <p class="notes__vide">Aucune note enregistrée pour le moment.</p>
-    {% endif %}
-
-    <p style="margin:24px 0 0;"><a class="lien mono" style="font-size:.76rem;" href="{% url 'rapports:mon_releve' %}">imprimer le relevé officiel →</a></p>
-  </section>
-
+  <div class="col-lg-4">
+    <div class="up-panel h-100">
+      <div class="up-panel__head">
+        <i class="bi bi-info-circle" style="color: var(--up-brand);"></i>
+        Ma fiche
+      </div>
+      <div class="up-panel__body small">
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted">Matricule</span>
+          <span class="fw-semibold up-mono">{{ fiche.matricule }}</span>
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted">Niveau</span>
+          <span class="fw-semibold">{{ fiche.get_niveau_display }}</span>
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted">Promotion</span>
+          <span class="fw-semibold">{{ fiche.promotion|default:"—" }}</span>
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted">Statut</span>
+          {% if fiche.est_actif %}
+            <span class="up-tag up-tag--ok">Actif</span>
+          {% else %}
+            <span class="up-tag up-tag--bad">Inactif</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+
 {% endif %}
 {% endblock %}
