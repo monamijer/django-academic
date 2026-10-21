@@ -52,7 +52,7 @@
         <i class="bi bi-building"></i> Facultés gérées
       </h6>
       <div class="up-panel mb-3" style="padding: 1rem; max-height: 260px; overflow-y: auto;">
-        {% for checkbox in form.facultes_gerées %}
+        {% for checkbox in form.facultes_gerees %}
           <div class="form-check">
             {{ checkbox.tag }}
             <label class="form-check-label" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
@@ -61,26 +61,39 @@
           <div class="text-muted small">Aucune faculté disponible.</div>
         {% endfor %}
       </div>
-      {% for e in form.facultes_gerées.errors %}<div class="text-danger small mb-3">{{ e }}</div>{% endfor %}
+      {% for e in form.facultes_gerees.errors %}<div class="text-danger small mb-3">{{ e }}</div>{% endfor %}
     </div>
 
     {# ═══ Départements gérés — visible pour CHEF_DEPT / PROF / SECRETAIRE ═══ #}
-    <div data-scope-block="departements" style="display:none;">
-      <h6 class="text-uppercase small fw-bold text-muted mt-4 mb-3" style="letter-spacing: .08em;">
-        <i class="bi bi-diagram-3"></i> Départements gérés / enseignés
-      </h6>
-      <div class="up-panel mb-3" style="padding: 1rem; max-height: 320px; overflow-y: auto;">
-        {% for checkbox in form.departements_gérés %}
-          <div class="form-check">
-            {{ checkbox.tag }}
-            <label class="form-check-label" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
-          </div>
-        {% empty %}
-          <div class="text-muted small">Aucun département disponible.</div>
-        {% endfor %}
-      </div>
-      {% for e in form.departements_gérés.errors %}<div class="text-danger small mb-3">{{ e }}</div>{% endfor %}
+    <div data-scope-block="departements-diriges" style="display:none;">
+  <h3>Départements dirigés</h3>
+  {% for checkbox in form.departements_diriges %}
+    <div class="form-check">
+      {{ checkbox.tag }}
+      <label class="form-check-label" for="{{ checkbox.id_for_label }}">
+        {{ checkbox.choice_label }}
+      </label>
     </div>
+  {% endfor %}
+  {% for error in form.departements_diriges.errors %}
+    <div class="text-danger">{{ error }}</div>
+  {% endfor %}
+</div>
+
+  <div data-scope-block="departements-enseignes" style="display:none;">
+    <h3>Départements d'enseignement</h3>
+    {% for checkbox in form.departements_enseignes %}
+      <div class="form-check">
+        {{ checkbox.tag }}
+        <label class="form-check-label" for="{{ checkbox.id_for_label }}">
+          {{ checkbox.choice_label }}
+        </label>
+      </div>
+    {% endfor %}
+    {% for error in form.departements_enseignes.errors %}
+      <div class="text-danger">{{ error }}</div>
+    {% endfor %}
+  </div>
 
     {# ═══ Statut ═══ #}
     <div class="form-check mb-4 mt-3">
@@ -96,22 +109,44 @@
 </div>
 
 <script>
-(function() {
+(function () {
   const roleSelect = document.getElementById('id_role');
   if (!roleSelect) return;
 
-  const ROLES_FACULTES = ['DOYEN'];
-  const ROLES_DEPARTEMENTS = ['CHEF_DEPARTEMENT', 'PROFESSEUR', 'SECRETAIRE'];
+  const facultyBlock =
+    document.querySelector('[data-scope-block="facultes"]');
+  const chefBlock =
+    document.querySelector('[data-scope-block="departements-diriges"]');
+  const professorBlock =
+    document.querySelector('[data-scope-block="departements-enseignes"]');
 
-  function toggle() {
+  function toggle(clearHiddenScopes = false) {
     const role = roleSelect.value;
-    const facBlock = document.querySelector('[data-scope-block="facultes"]');
-    const depBlock = document.querySelector('[data-scope-block="departements"]');
-    if (facBlock) facBlock.style.display = ROLES_FACULTES.includes(role) ? '' : 'none';
-    if (depBlock) depBlock.style.display = ROLES_DEPARTEMENTS.includes(role) ? '' : 'none';
+
+    const showFaculty = role === 'DOYEN';
+    const showChef = role === 'CHEF_DEPARTEMENT';
+    const showProfessor = role === 'PROFESSEUR';
+
+    const blocks = [
+      [facultyBlock, showFaculty],
+      [chefBlock, showChef],
+      [professorBlock, showProfessor],
+    ];
+
+    blocks.forEach(([block, show]) => {
+      if (!block) return;
+
+      block.style.display = show ? '' : 'none';
+
+      if (clearHiddenScopes && !show) {
+        block.querySelectorAll('input[type="checkbox"]').forEach(
+          checkbox => { checkbox.checked = false; }
+        );
+      }
+    });
   }
 
-  roleSelect.addEventListener('change', toggle);
+  roleSelect.addEventListener('change', () => toggle(true));
   toggle();
 })();
 </script>

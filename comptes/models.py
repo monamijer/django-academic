@@ -3,12 +3,11 @@ from django.db import models
 
 
 class Utilisateur(AbstractUser):
-    """Utilisateur de l'application.
-
-    Périmètres : un utilisateur peut superviser PLUSIEURS facultés et/ou
-    départements. Les anciens champs FK `faculte` / `departement` sont
-    conservés pour compatibilité mais ne sont plus utilisés par l'UI ni
-    par `departements_geres()`.
+    """Périmètres :
+      - DOYEN            : facultes_gerees
+      - CHEF_DEPARTEMENT : departements_diriges
+      - PROFESSEUR       : departements_enseignes
+      - SECRETAIRE       : aucun M2M
     """
 
     class Role(models.TextChoices):
@@ -27,7 +26,7 @@ class Utilisateur(AbstractUser):
         help_text="Décochez pour désactiver ce compte sans le supprimer."
     )
 
-    # ─── Ancien périmètre (conservé pour compatibilité uniquement) ───
+    # Anciens FK (compat uniquement, plus utilisés par l'UI)
     faculte = models.ForeignKey(
         "academique.Faculte", null=True, blank=True, on_delete=models.SET_NULL,
         related_name="doyens",
@@ -37,19 +36,21 @@ class Utilisateur(AbstractUser):
         related_name="membres",
     )
 
-    # ─── Nouveaux périmètres multi-valués ───
-    facultes_gerées = models.ManyToManyField(
-        "academique.Faculte", blank=True,
-        related_name="utilisateurs_gerants",
+    # Nouveaux périmètres — noms ASCII stricts (pas d'accents)
+    facultes_gerees = models.ManyToManyField(
+        "academique.Faculte", blank=True, related_name="utilisateurs_gerants",
         verbose_name="Facultés gérées",
         help_text="Facultés supervisées (Doyen).",
     )
-    departements_gérés = models.ManyToManyField(
-        "academique.Departement", blank=True,
-        related_name="utilisateurs_gerants",
-        verbose_name="Départements gérés",
-        help_text="Départements supervisés ou enseignés "
-                  "(Chef de département, Professeur, Secrétaire).",
+    departements_diriges = models.ManyToManyField(
+        "academique.Departement", blank=True, related_name="chefs",
+        verbose_name="Départements dirigés",
+        help_text="Départements dirigés (Chef de département).",
+    )
+    departements_enseignes = models.ManyToManyField(
+        "academique.Departement", blank=True, related_name="enseignants",
+        verbose_name="Départements d'enseignement",
+        help_text="Départements dans lesquels le professeur enseigne.",
     )
 
     def save(self, *args, **kwargs):
@@ -72,46 +73,36 @@ class Utilisateur(AbstractUser):
         return self.est_admin_systeme or self.role == self.Role.DIRECTEUR_ACADEMIQUE
 
     def departements_geres(self):
-        """Queryset des départements visibles pour cet utilisateur."""
-        from academique.models import Departement
+        from academique.models import Departement, Faculte
         if self.a_acces_global:
             return Departement.objects.all()
         if self.role == self.Role.DOYEN:
-            facs = self.facultes_gerées.all()
-            if facs.exists():
-                return Departement.objects.filter(faculte__in=facs)
-            # fallback compat : ancien FK
-            if self.faculte_id:
-                return Departement.objects.filter(faculte_id=self.faculte_id)
-            return Departement.objects.none()
-        if self.role in (
-            self.Role.CHEF_DEPARTEMENT,
-            self.Role.PROFESSEUR,
-            self.Role.SECRETAIRE,
-        ):
-            deps = self.departements_gérés.all()
-            if deps.exists():
-                return deps
-            if self.departement_id:
+            facs = self.facultes_gerees.all()
+            if not facs.exists() and self.faculte_id:
+                facs = Faculte.objects.filter(pk=self.faculte_id)
+            return Departement.objects.filter(faculte__in=facs)
+        if self.role == self.Role.CHEF_DEPARTEMENT:
+            qs = self.departements_diriges.all()
+            if not qs.exists() and self.departement_id:
                 return Departement.objects.filter(pk=self.departement_id)
-            return Departement.objects.none()
+            return qs
+        if self.role == self.Role.PROFESSEUR:
+            qs = self.departements_enseignes.all()
+            if not qs.exists() and self.departement_id:
+                return Departement.objects.filter(pk=self.departement_id)
+            return qs
         return Departement.objects.none()
 
     def facultes_geres(self):
-        """Queryset des facultés visibles pour cet utilisateur."""
         from academique.models import Faculte
         if self.a_acces_global:
             return Faculte.objects.all()
         if self.role == self.Role.DOYEN:
-            facs = self.facultes_gerées.all()
-            if facs.exists():
-                return facs
-            if self.faculte_id:
+            facs = self.facultes_gerees.all()
+            if not facs.exists() and self.faculte_id:
                 return Faculte.objects.filter(pk=self.faculte_id)
-            return Faculte.objects.none()
-        return Faculte.objects.filter(
-            pk__in=self.departements_geres().values_list("faculte_id", flat=True)
-        ).distinct()
+            return facs
+        return Faculte.objects.none()
 
 
 class JournalActivite(models.Model):
