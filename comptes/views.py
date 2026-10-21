@@ -141,7 +141,7 @@ def tableau_bord(request):
     elif u.role == Utilisateur.Role.DOYEN:
         departements = u.departements_geres()
         contexte.update({
-            "faculte": u.faculte,
+            "facultes_liste": u.facultes_geres(),
             "departements_liste": departements,
             "nb_departements": departements.count(),
             "nb_etudiants": Etudiant.objects.filter(filiere__departement__in=departements, est_actif=True).count(),
@@ -153,7 +153,7 @@ def tableau_bord(request):
         departements = u.departements_geres()
         etudiants = Etudiant.objects.filter(filiere__departement__in=departements, est_actif=True)
         contexte.update({
-            "departement": u.departement,
+            "departements_liste": u.departements_gérés.all(),
             "nb_etudiants": etudiants.count(),
             "nb_cours": Cours.objects.filter(departement__in=departements, est_actif=True).count(),
             "etudiants_en_difficulte": [e for e in etudiants if e.en_difficulte][:8],
@@ -169,7 +169,7 @@ def tableau_bord(request):
         departements = u.departements_geres()
         etudiants_dept = Etudiant.objects.filter(filiere__departement__in=departements)
         contexte.update({
-            "departement": u.departement,
+            "departements_liste": u.departements_gérés.all(),
             "nb_etudiants": etudiants_dept.count(),
             "derniers_etudiants": etudiants_dept.select_related("utilisateur", "filiere").order_by("-pk")[:6],
         })

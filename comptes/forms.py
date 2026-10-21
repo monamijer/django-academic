@@ -4,6 +4,7 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from django.core.exceptions import ValidationError
 
+from academique.models import Departement, Faculte
 from .models import Utilisateur
 
 TELEPHONE_CHIFFRES_MIN = 8
@@ -31,11 +32,16 @@ _ADMIN_AUTOCOMPLETE = {"autocomplete": "off", "spellcheck": "false"}
 class ConnexionForm(AuthenticationForm):
     username = forms.CharField(
         label="Nom d'utilisateur",
-        widget=forms.TextInput(attrs={"class": "form-control", "autofocus": True, "autocomplete": "username"}),
+        widget=forms.TextInput(attrs={
+            "class": "form-control", "autofocus": True,
+            "autocomplete": "username",
+        }),
     )
     password = forms.CharField(
         label="Mot de passe",
-        widget=forms.PasswordInput(attrs={"class": "form-control", "autocomplete": "current-password"}),
+        widget=forms.PasswordInput(attrs={
+            "class": "form-control", "autocomplete": "current-password",
+        }),
     )
 
 
@@ -62,8 +68,7 @@ class ProfilForm(forms.ModelForm):
         telephone.validators.append(valider_telephone)
         telephone.help_text = "Exemple : +257 79 123 456 (8 à 15 chiffres)."
         telephone.widget.attrs.update({
-            "inputmode": "tel",
-            "autocomplete": "tel",
+            "inputmode": "tel", "autocomplete": "tel",
             "data-garde-champ": "telephone",
             "data-min-chiffres": TELEPHONE_CHIFFRES_MIN,
             "data-max-chiffres": TELEPHONE_CHIFFRES_MAX,
@@ -82,13 +87,11 @@ class ChangerMotDePasseForm(PasswordChangeForm):
 
 
 class UtilisateurForm(forms.ModelForm):
-    """Formulaire administratif complet : réservé à l'administrateur système."""
-
     class Meta:
         model = Utilisateur
         fields = [
             "username", "first_name", "last_name", "email", "telephone",
-            "role", "faculte", "departement", "est_actif_compte",
+            "role", "facultes_gerées", "departements_gérés", "est_actif_compte",
         ]
         widgets = {
             "username": forms.TextInput(attrs={"class": "form-control", **_ADMIN_AUTOCOMPLETE}),
@@ -97,19 +100,18 @@ class UtilisateurForm(forms.ModelForm):
             "email": forms.EmailInput(attrs={"class": "form-control", **_ADMIN_AUTOCOMPLETE}),
             "telephone": forms.TextInput(attrs={"class": "form-control", **_ADMIN_AUTOCOMPLETE}),
             "role": forms.Select(attrs={"class": "form-select"}),
-            "faculte": forms.Select(attrs={"class": "form-select"}),
-            "departement": forms.Select(attrs={"class": "form-select"}),
+            "facultes_gerées": forms.CheckboxSelectMultiple(),
+            "departements_gérés": forms.CheckboxSelectMultiple(),
             "est_actif_compte": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Défensif : les sous-classes peuvent avoir retiré ces champs de Meta.
-        if "faculte" in self.fields:
-            self.fields["faculte"].empty_label = "— Aucune —"
-        if "departement" in self.fields:
-            self.fields["departement"].empty_label = "— Aucun —"
-        # On masque ADMIN_SYSTEME du select : il ne doit exister qu'un seul admin.
+        self.fields["facultes_gerées"].queryset = Faculte.objects.filter(est_active=True).order_by("nom")
+        self.fields["departements_gérés"].queryset = Departement.objects.filter(est_actif=True).select_related("faculte").order_by("faculte__nom", "nom")
+        self.fields["facultes_gerées"].required = False
+        self.fields["departements_gérés"].required = False
+
         if "role" in self.fields:
             self.fields["role"].choices = [
                 (code, label) for code, label in self.fields["role"].choices
@@ -119,32 +121,35 @@ class UtilisateurForm(forms.ModelForm):
     def clean(self):
         cleaned = super().clean()
         role = cleaned.get("role")
-        faculte = cleaned.get("faculte")
-        departement = cleaned.get("departement")
+        facs = cleaned.get("facultes_gerées") or []
+        deps = cleaned.get("departements_gérés") or []
 
-        # Un seul administrateur système au monde
         if role == Utilisateur.Role.ADMIN_SYSTEME:
             existant = Utilisateur.objects.filter(role=Utilisateur.Role.ADMIN_SYSTEME)
             if self.instance.pk:
                 existant = existant.exclude(pk=self.instance.pk)
             if existant.exists():
                 raise ValidationError({
-                    "role": "Un administrateur système existe déjà. "
-                            "Ce rôle ne peut pas être attribué à un second compte."
+                    "role": "Un administrateur système existe déjà."
                 })
 
-        if role == Utilisateur.Role.DOYEN and not faculte:
-            raise ValidationError({"faculte": "Un Doyen doit être rattaché à une faculté."})
+        if role == Utilisateur.Role.DOYEN and not facs:
+            raise ValidationError({
+                "facultes_gerées": "Un Doyen doit gérer au moins une faculté."
+            })
         if role in (
             Utilisateur.Role.CHEF_DEPARTEMENT,
             Utilisateur.Role.PROFESSEUR,
             Utilisateur.Role.SECRETAIRE,
-        ) and not departement:
-            raise ValidationError({"departement": "Ce rôle nécessite un département."})
+        ) and not deps:
+            raise ValidationError({
+                "departements_gérés": "Ce rôle nécessite au moins un département."
+            })
+
         if role == Utilisateur.Role.ETUDIANT:
-            raise ValidationError(
-                {"role": "Utilisez le formulaire dédié « Ajouter un étudiant » pour créer un compte étudiant."}
-            )
+            raise ValidationError({
+                "role": "Utilisez le formulaire dédié « Ajouter un étudiant »."
+            })
         return cleaned
 
 
@@ -169,4 +174,5 @@ class UtilisateurCreationForm(UtilisateurForm):
         utilisateur.set_password(self.cleaned_data["password1"])
         if commit:
             utilisateur.save()
+            self.save_m2m()
         return utilisateur

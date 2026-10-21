@@ -2,14 +2,14 @@
 {% block titre %}{{ titre }}{% endblock %}
 {% block contenu %}
 <div class="page-head"><div><h1>{{ titre }}</h1></div></div>
-<div class="panel col-md-7" style="padding:1.5rem;">
+
+<div class="panel" style="padding: 1.75rem; max-width: 900px;">
   {% if creation %}
-    <div class="alert alert-info small">
-      <i class="bi bi-info-circle"></i>
-      Pour créer un <strong>étudiant</strong>, utilisez
-      <a href="{% url 'etudiants:creer_etudiant' %}">Étudiants → Ajouter</a>
-      afin que la fiche académique (matricule, filière, promotion) soit créée.
-    </div>
+  <div class="alert alert-info small mb-4">
+    <i class="bi bi-info-circle"></i>
+    Pour créer un <strong>étudiant</strong>, utilisez
+    <a href="{% url 'etudiants:creer_etudiant' %}">Étudiants → Ajouter</a>.
+  </div>
   {% endif %}
 
   <form method="post" autocomplete="off">
@@ -20,22 +20,92 @@
       </div>
     {% endif %}
 
+    {# ═══ Identité ═══ #}
+    <h6 class="text-uppercase small fw-bold text-muted mb-3" style="letter-spacing: .08em;">
+      <i class="bi bi-person-badge"></i> Identité
+    </h6>
     <div class="row">
-    {% for field in form %}
-      <div class="col-md-6 mb-3 {% if field.field.widget.input_type == 'checkbox' %}form-check{% endif %}">
-        {% if field.field.widget.input_type == 'checkbox' %}
-          {{ field }} <label class="form-check-label">{{ field.label }}</label>
-        {% else %}
-          <label class="form-label">{{ field.label }}</label>{{ field }}
-        {% endif %}
-        {% if field.help_text %}<div class="form-text small">{{ field.help_text }}</div>{% endif %}
-        {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-      </div>
-    {% endfor %}
+      <div class="col-md-6 mb-3"><label class="form-label">{{ form.username.label }}</label>{{ form.username }}{% for e in form.username.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+      <div class="col-md-6 mb-3"><label class="form-label">{{ form.email.label }}</label>{{ form.email }}{% for e in form.email.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+      <div class="col-md-6 mb-3"><label class="form-label">{{ form.first_name.label }}</label>{{ form.first_name }}{% for e in form.first_name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+      <div class="col-md-6 mb-3"><label class="form-label">{{ form.last_name.label }}</label>{{ form.last_name }}{% for e in form.last_name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+      <div class="col-md-6 mb-3"><label class="form-label">{{ form.telephone.label }}</label>{{ form.telephone }}{% for e in form.telephone.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+      {% if form.password1 %}<div class="col-md-6 mb-3"><label class="form-label">{{ form.password1.label }}</label>{{ form.password1 }}{% for e in form.password1.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>{% endif %}
+      {% if form.password2 %}<div class="col-md-6 mb-3"><label class="form-label">{{ form.password2.label }}</label>{{ form.password2 }}{% for e in form.password2.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>{% endif %}
     </div>
 
-    <button class="btn btn-brand btn-icon"><i class="bi bi-check-lg"></i> Enregistrer</button>
-    <a href="{% url 'comptes:liste_utilisateurs' %}" class="btn btn-outline-secondary">Annuler</a>
+    {# ═══ Rôle ═══ #}
+    <h6 class="text-uppercase small fw-bold text-muted mt-4 mb-3" style="letter-spacing: .08em;">
+      <i class="bi bi-shield-lock"></i> Rôle
+    </h6>
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label class="form-label">{{ form.role.label }}</label>
+        {{ form.role }}
+        {% for e in form.role.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+    </div>
+
+    {# ═══ Facultés gérées ═══ #}
+    <h6 class="text-uppercase small fw-bold text-muted mt-4 mb-3" style="letter-spacing: .08em;">
+      <i class="bi bi-building"></i> Facultés gérées
+      <span class="small text-muted fw-normal ms-2">(pour un Doyen)</span>
+    </h6>
+    <div class="up-panel mb-3" style="padding: 1rem; max-height: 240px; overflow-y: auto;">
+      {% if form.facultes_gerées.field.queryset %}
+        <div class="row">
+        {% for checkbox in form.facultes_gerées %}
+          <div class="col-md-6">
+            <div class="form-check">
+              {{ checkbox.tag }}
+              <label class="form-check-label" for="{{ checkbox.id_for_label }}">
+                {{ checkbox.choice_label }}
+              </label>
+            </div>
+          </div>
+        {% endfor %}
+        </div>
+      {% else %}
+        <div class="text-muted small">Aucune faculté disponible.</div>
+      {% endif %}
+    </div>
+    {% for e in form.facultes_gerées.errors %}<div class="text-danger small mb-3">{{ e }}</div>{% endfor %}
+
+    {# ═══ Départements gérés ═══ #}
+    <h6 class="text-uppercase small fw-bold text-muted mt-4 mb-3" style="letter-spacing: .08em;">
+      <i class="bi bi-diagram-3"></i> Départements gérés / enseignés
+      <span class="small text-muted fw-normal ms-2">(Chef de département, Professeur, Secrétaire)</span>
+    </h6>
+    <div class="up-panel mb-3" style="padding: 1rem; max-height: 320px; overflow-y: auto;">
+      {% if form.departements_gérés.field.queryset %}
+        <div class="row">
+        {% for checkbox in form.departements_gérés %}
+          <div class="col-md-6">
+            <div class="form-check">
+              {{ checkbox.tag }}
+              <label class="form-check-label" for="{{ checkbox.id_for_label }}">
+                {{ checkbox.choice_label }}
+              </label>
+            </div>
+          </div>
+        {% endfor %}
+        </div>
+      {% else %}
+        <div class="text-muted small">Aucun département disponible.</div>
+      {% endif %}
+    </div>
+    {% for e in form.departements_gérés.errors %}<div class="text-danger small mb-3">{{ e }}</div>{% endfor %}
+
+    {# ═══ Statut ═══ #}
+    <div class="form-check mb-4 mt-3">
+      {{ form.est_actif_compte }}
+      <label class="form-check-label">{{ form.est_actif_compte.label }}</label>
+    </div>
+
+    <div class="d-flex gap-2 mt-4 pt-3" style="border-top: 1px solid var(--up-line);">
+      <button class="btn btn-brand btn-icon"><i class="bi bi-check-lg"></i> Enregistrer</button>
+      <a href="{% url 'comptes:liste_utilisateurs' %}" class="btn btn-outline-secondary">Annuler</a>
+    </div>
   </form>
 </div>
 {% endblock %}

@@ -1,12 +1,15 @@
 from django.contrib.auth.models import AbstractUser
-from django.core.exceptions import ValidationError
 from django.db import models
 
 
 class Utilisateur(AbstractUser):
-    """Utilisateur de l'application. Le rôle détermine le tableau de bord et
-    les permissions ; le périmètre (faculté/département) borne les données
-    visibles pour les rôles intermédiaires de la hiérarchie académique."""
+    """Utilisateur de l'application.
+
+    Périmètres : un utilisateur peut superviser PLUSIEURS facultés et/ou
+    départements. Les anciens champs FK `faculte` / `departement` sont
+    conservés pour compatibilité mais ne sont plus utilisés par l'UI ni
+    par `departements_geres()`.
+    """
 
     class Role(models.TextChoices):
         ADMIN_SYSTEME = "ADMIN_SYSTEME", "Administrateur système"
@@ -24,19 +27,33 @@ class Utilisateur(AbstractUser):
         help_text="Décochez pour désactiver ce compte sans le supprimer."
     )
 
+    # ─── Ancien périmètre (conservé pour compatibilité uniquement) ───
     faculte = models.ForeignKey(
         "academique.Faculte", null=True, blank=True, on_delete=models.SET_NULL,
-        related_name="doyens", help_text="Périmètre du Doyen."
+        related_name="doyens",
     )
     departement = models.ForeignKey(
         "academique.Departement", null=True, blank=True, on_delete=models.SET_NULL,
-        related_name="membres", help_text="Périmètre du Chef de département / Professeur / Secrétaire."
+        related_name="membres",
+    )
+
+    # ─── Nouveaux périmètres multi-valués ───
+    facultes_gerées = models.ManyToManyField(
+        "academique.Faculte", blank=True,
+        related_name="utilisateurs_gerants",
+        verbose_name="Facultés gérées",
+        help_text="Facultés supervisées (Doyen).",
+    )
+    departements_gérés = models.ManyToManyField(
+        "academique.Departement", blank=True,
+        related_name="utilisateurs_gerants",
+        verbose_name="Départements gérés",
+        help_text="Départements supervisés ou enseignés "
+                  "(Chef de département, Professeur, Secrétaire).",
     )
 
     def save(self, *args, **kwargs):
         self.is_active = self.est_actif_compte
-        # is_staff est recalculé à chaque save : un compte rétrogradé de rôle
-        # ne conserve jamais les privilèges staff/admin par accident.
         self.is_staff = (
             self.is_superuser
             or self.role in (self.Role.ADMIN_SYSTEME, self.Role.DIRECTEUR_ACADEMIQUE)
@@ -55,14 +72,46 @@ class Utilisateur(AbstractUser):
         return self.est_admin_systeme or self.role == self.Role.DIRECTEUR_ACADEMIQUE
 
     def departements_geres(self):
+        """Queryset des départements visibles pour cet utilisateur."""
         from academique.models import Departement
         if self.a_acces_global:
             return Departement.objects.all()
-        if self.role == self.Role.DOYEN and self.faculte_id:
-            return Departement.objects.filter(faculte=self.faculte)
-        if self.role in (self.Role.CHEF_DEPARTEMENT, self.Role.PROFESSEUR, self.Role.SECRETAIRE) and self.departement_id:
-            return Departement.objects.filter(pk=self.departement_id)
+        if self.role == self.Role.DOYEN:
+            facs = self.facultes_gerées.all()
+            if facs.exists():
+                return Departement.objects.filter(faculte__in=facs)
+            # fallback compat : ancien FK
+            if self.faculte_id:
+                return Departement.objects.filter(faculte_id=self.faculte_id)
+            return Departement.objects.none()
+        if self.role in (
+            self.Role.CHEF_DEPARTEMENT,
+            self.Role.PROFESSEUR,
+            self.Role.SECRETAIRE,
+        ):
+            deps = self.departements_gérés.all()
+            if deps.exists():
+                return deps
+            if self.departement_id:
+                return Departement.objects.filter(pk=self.departement_id)
+            return Departement.objects.none()
         return Departement.objects.none()
+
+    def facultes_geres(self):
+        """Queryset des facultés visibles pour cet utilisateur."""
+        from academique.models import Faculte
+        if self.a_acces_global:
+            return Faculte.objects.all()
+        if self.role == self.Role.DOYEN:
+            facs = self.facultes_gerées.all()
+            if facs.exists():
+                return facs
+            if self.faculte_id:
+                return Faculte.objects.filter(pk=self.faculte_id)
+            return Faculte.objects.none()
+        return Faculte.objects.filter(
+            pk__in=self.departements_geres().values_list("faculte_id", flat=True)
+        ).distinct()
 
 
 class JournalActivite(models.Model):
