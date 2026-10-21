@@ -28,6 +28,14 @@ def valider_telephone(valeur):
 
 _ADMIN_AUTOCOMPLETE = {"autocomplete": "off", "spellcheck": "false"}
 
+# ─── Quels rôles utilisent quels périmètres ───
+ROLES_AVEC_FACULTES = {Utilisateur.Role.DOYEN}
+ROLES_AVEC_DEPARTEMENTS = {
+    Utilisateur.Role.CHEF_DEPARTEMENT,
+    Utilisateur.Role.PROFESSEUR,
+    Utilisateur.Role.SECRETAIRE,
+}
+
 
 class ConnexionForm(AuthenticationForm):
     username = forms.CharField(
@@ -99,7 +107,7 @@ class UtilisateurForm(forms.ModelForm):
             "last_name": forms.TextInput(attrs={"class": "form-control", **_ADMIN_AUTOCOMPLETE}),
             "email": forms.EmailInput(attrs={"class": "form-control", **_ADMIN_AUTOCOMPLETE}),
             "telephone": forms.TextInput(attrs={"class": "form-control", **_ADMIN_AUTOCOMPLETE}),
-            "role": forms.Select(attrs={"class": "form-select"}),
+            "role": forms.Select(attrs={"class": "form-select", "id": "id_role"}),
             "facultes_gerées": forms.CheckboxSelectMultiple(),
             "departements_gérés": forms.CheckboxSelectMultiple(),
             "est_actif_compte": forms.CheckboxInput(attrs={"class": "form-check-input"}),
@@ -107,16 +115,54 @@ class UtilisateurForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["facultes_gerées"].queryset = Faculte.objects.filter(est_active=True).order_by("nom")
-        self.fields["departements_gérés"].queryset = Departement.objects.filter(est_actif=True).select_related("faculte").order_by("faculte__nom", "nom")
+
+        self.fields["facultes_gerées"].queryset = (
+            Faculte.objects.filter(est_active=True).order_by("nom")
+        )
+        self.fields["departements_gérés"].queryset = (
+            Departement.objects.filter(est_actif=True)
+            .select_related("faculte").order_by("faculte__nom", "nom")
+        )
         self.fields["facultes_gerées"].required = False
         self.fields["departements_gérés"].required = False
 
-        if "role" in self.fields:
+        # Masque ADMIN_SYSTEME (rôle unique, créé via createsuperuser)
+        self.fields["role"].choices = [
+            (code, label) for code, label in self.fields["role"].choices
+            if code != Utilisateur.Role.ADMIN_SYSTEME
+        ]
+
+        # Rôle courant : instance en édition, sinon premier choix
+        role_actif = (
+            self.instance.role
+            if self.instance and self.instance.pk
+            else self.fields["role"].choices[0][0]
+        )
+
+        # Si l'instance est un étudiant : le formulaire ne doit pas être utilisé
+        # (la vue creer/modifier doit rediriger en amont), mais on s'assure
+        # que l'UI ne casse pas : on enlève les périmètres.
+        if role_actif == Utilisateur.Role.ETUDIANT:
             self.fields["role"].choices = [
                 (code, label) for code, label in self.fields["role"].choices
-                if code != Utilisateur.Role.ADMIN_SYSTEME
+                if code != Utilisateur.Role.ETUDIANT
             ]
+
+        # Pré-remplissage M2M en édition
+        if self.instance and self.instance.pk:
+            if self.instance.facultes_gerées.exists():
+                self.fields["facultes_gerées"].initial = (
+                    self.instance.facultes_gerées.values_list("pk", flat=True)
+                )
+            elif self.instance.faculte_id:
+                self.fields["facultes_gerées"].initial = [self.instance.faculte_id]
+
+            if self.instance.departements_gérés.exists():
+                self.fields["departements_gérés"].initial = (
+                    self.instance.departements_gérés.values_list("pk", flat=True)
+                )
+            elif self.instance.departement_id:
+                self.fields["departements_gérés"].initial = [self.instance.departement_id]
 
     def clean(self):
         cleaned = super().clean()
@@ -124,6 +170,7 @@ class UtilisateurForm(forms.ModelForm):
         facs = cleaned.get("facultes_gerées") or []
         deps = cleaned.get("departements_gérés") or []
 
+        # Un seul ADMIN_SYSTEME au monde
         if role == Utilisateur.Role.ADMIN_SYSTEME:
             existant = Utilisateur.objects.filter(role=Utilisateur.Role.ADMIN_SYSTEME)
             if self.instance.pk:
@@ -133,23 +180,29 @@ class UtilisateurForm(forms.ModelForm):
                     "role": "Un administrateur système existe déjà."
                 })
 
-        if role == Utilisateur.Role.DOYEN and not facs:
+        # Interdiction de créer un ETUDIANT ici
+        if role == Utilisateur.Role.ETUDIANT:
+            raise ValidationError({
+                "role": "Les comptes étudiants doivent être créés via "
+                        "« Étudiants → Ajouter » pour générer la fiche académique."
+            })
+
+        # Périmètres obligatoires par rôle
+        if role in ROLES_AVEC_FACULTES and not facs:
             raise ValidationError({
                 "facultes_gerées": "Un Doyen doit gérer au moins une faculté."
             })
-        if role in (
-            Utilisateur.Role.CHEF_DEPARTEMENT,
-            Utilisateur.Role.PROFESSEUR,
-            Utilisateur.Role.SECRETAIRE,
-        ) and not deps:
+        if role in ROLES_AVEC_DEPARTEMENTS and not deps:
             raise ValidationError({
                 "departements_gérés": "Ce rôle nécessite au moins un département."
             })
 
-        if role == Utilisateur.Role.ETUDIANT:
-            raise ValidationError({
-                "role": "Utilisez le formulaire dédié « Ajouter un étudiant »."
-            })
+        # Nettoyage : un rôle qui n'utilise pas un périmètre ne doit pas le conserver
+        if role not in ROLES_AVEC_FACULTES and facs:
+            cleaned["facultes_gerées"] = Faculte.objects.none()
+        if role not in ROLES_AVEC_DEPARTEMENTS and deps:
+            cleaned["departements_gérés"] = Departement.objects.none()
+
         return cleaned
 
 

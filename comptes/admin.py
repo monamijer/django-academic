@@ -1,39 +1,38 @@
 from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
-from django.shortcuts import redirect
+from django.core.exceptions import ValidationError
 
 from .models import JournalActivite, Utilisateur
 
 
 @admin.register(Utilisateur)
 class UtilisateurAdmin(UserAdmin):
-    list_display = ("username", "email", "role", "faculte", "departement", "est_actif_compte")
-    list_filter = ("role", "faculte", "departement", "est_actif_compte")
+    list_display = ("username", "email", "role", "est_actif_compte")
+    list_filter = ("role", "est_actif_compte")
     search_fields = ("username", "first_name", "last_name", "email")
     fieldsets = UserAdmin.fieldsets + (
-        ("Rôle académique", {"fields": ("role", "faculte", "departement", "telephone", "est_actif_compte")}),
+        ("Rôle académique", {
+            "fields": ("role", "telephone", "est_actif_compte"),
+        }),
+        ("Périmètres", {
+            "fields": ("facultes_gerées", "departements_gérés"),
+            "description": "Uniquement pour les rôles non-étudiant.",
+        }),
     )
-
-    def get_form(self, request, obj=None, **kwargs):
-        form = super().get_form(request, obj=obj, **kwargs)
-        # En création, on empêche de sélectionner ETUDIANT : le rôle doit
-        # être créé via etudiants:creer_etudiant pour garantir la fiche.
-        if obj is None and "role" in form.base_fields:
-            form.base_fields["role"].choices = [
-                (v, label) for v, label in Utilisateur.Role.choices
-                if v != Utilisateur.Role.ETUDIANT
-            ]
-        return form
+    filter_horizontal = ("facultes_gerées", "departements_gérés")
 
     def save_model(self, request, obj, form, change):
-        if not change and obj.role == Utilisateur.Role.ETUDIANT:
-            messages.error(
-                request,
-                "Les comptes étudiants doivent être créés depuis "
-                "« Étudiants → Ajouter » pour générer la fiche académique.",
-            )
-            # On ne persiste pas : la vue redirigera vers le bon formulaire.
-            return
+        # Un seul ADMIN_SYSTEME (garde serveur, en plus de clean())
+        if obj.role == Utilisateur.Role.ADMIN_SYSTEME:
+            existant = Utilisateur.objects.filter(role=Utilisateur.Role.ADMIN_SYSTEME)
+            if change:
+                existant = existant.exclude(pk=obj.pk)
+            if existant.exists():
+                messages.error(
+                    request,
+                    "Un administrateur système existe déjà — impossible d'en créer un second.",
+                )
+                return
         super().save_model(request, obj, form, change)
 
 

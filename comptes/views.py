@@ -261,6 +261,14 @@ def creer_utilisateur(request):
 @exiger_admin_systeme
 def modifier_utilisateur(request, pk):
     u = get_object_or_404(Utilisateur, pk=pk)
+    # Les comptes étudiants se modifient via la fiche étudiant dédiée
+    if u.role == Utilisateur.Role.ETUDIANT and hasattr(u, "fiche_etudiant"):
+        messages.info(
+            request,
+            "Ce compte est un étudiant. Modifiez la fiche étudiant pour changer "
+            "son niveau, son département ou ses informations académiques.",
+        )
+        return redirect("etudiants:modifier_etudiant", pk=u.fiche_etudiant.pk)
     if request.method == "POST":
         form = UtilisateurForm(request.POST, instance=u)
         if form.is_valid():

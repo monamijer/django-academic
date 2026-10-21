@@ -12,7 +12,7 @@
   </div>
   {% endif %}
 
-  <form method="post" autocomplete="off">
+  <form method="post" autocomplete="off" id="up-user-form">
     {% csrf_token %}
     {% if form.non_field_errors %}
       <div class="alert alert-danger">
@@ -46,55 +46,41 @@
       </div>
     </div>
 
-    {# ═══ Facultés gérées ═══ #}
-    <h6 class="text-uppercase small fw-bold text-muted mt-4 mb-3" style="letter-spacing: .08em;">
-      <i class="bi bi-building"></i> Facultés gérées
-      <span class="small text-muted fw-normal ms-2">(pour un Doyen)</span>
-    </h6>
-    <div class="up-panel mb-3" style="padding: 1rem; max-height: 240px; overflow-y: auto;">
-      {% if form.facultes_gerées.field.queryset %}
-        <div class="row">
+    {# ═══ Facultés gérées — visible uniquement pour DOYEN ═══ #}
+    <div data-scope-block="facultes" style="display:none;">
+      <h6 class="text-uppercase small fw-bold text-muted mt-4 mb-3" style="letter-spacing: .08em;">
+        <i class="bi bi-building"></i> Facultés gérées
+      </h6>
+      <div class="up-panel mb-3" style="padding: 1rem; max-height: 260px; overflow-y: auto;">
         {% for checkbox in form.facultes_gerées %}
-          <div class="col-md-6">
-            <div class="form-check">
-              {{ checkbox.tag }}
-              <label class="form-check-label" for="{{ checkbox.id_for_label }}">
-                {{ checkbox.choice_label }}
-              </label>
-            </div>
+          <div class="form-check">
+            {{ checkbox.tag }}
+            <label class="form-check-label" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
           </div>
+        {% empty %}
+          <div class="text-muted small">Aucune faculté disponible.</div>
         {% endfor %}
-        </div>
-      {% else %}
-        <div class="text-muted small">Aucune faculté disponible.</div>
-      {% endif %}
+      </div>
+      {% for e in form.facultes_gerées.errors %}<div class="text-danger small mb-3">{{ e }}</div>{% endfor %}
     </div>
-    {% for e in form.facultes_gerées.errors %}<div class="text-danger small mb-3">{{ e }}</div>{% endfor %}
 
-    {# ═══ Départements gérés ═══ #}
-    <h6 class="text-uppercase small fw-bold text-muted mt-4 mb-3" style="letter-spacing: .08em;">
-      <i class="bi bi-diagram-3"></i> Départements gérés / enseignés
-      <span class="small text-muted fw-normal ms-2">(Chef de département, Professeur, Secrétaire)</span>
-    </h6>
-    <div class="up-panel mb-3" style="padding: 1rem; max-height: 320px; overflow-y: auto;">
-      {% if form.departements_gérés.field.queryset %}
-        <div class="row">
+    {# ═══ Départements gérés — visible pour CHEF_DEPT / PROF / SECRETAIRE ═══ #}
+    <div data-scope-block="departements" style="display:none;">
+      <h6 class="text-uppercase small fw-bold text-muted mt-4 mb-3" style="letter-spacing: .08em;">
+        <i class="bi bi-diagram-3"></i> Départements gérés / enseignés
+      </h6>
+      <div class="up-panel mb-3" style="padding: 1rem; max-height: 320px; overflow-y: auto;">
         {% for checkbox in form.departements_gérés %}
-          <div class="col-md-6">
-            <div class="form-check">
-              {{ checkbox.tag }}
-              <label class="form-check-label" for="{{ checkbox.id_for_label }}">
-                {{ checkbox.choice_label }}
-              </label>
-            </div>
+          <div class="form-check">
+            {{ checkbox.tag }}
+            <label class="form-check-label" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
           </div>
+        {% empty %}
+          <div class="text-muted small">Aucun département disponible.</div>
         {% endfor %}
-        </div>
-      {% else %}
-        <div class="text-muted small">Aucun département disponible.</div>
-      {% endif %}
+      </div>
+      {% for e in form.departements_gérés.errors %}<div class="text-danger small mb-3">{{ e }}</div>{% endfor %}
     </div>
-    {% for e in form.departements_gérés.errors %}<div class="text-danger small mb-3">{{ e }}</div>{% endfor %}
 
     {# ═══ Statut ═══ #}
     <div class="form-check mb-4 mt-3">
@@ -108,4 +94,25 @@
     </div>
   </form>
 </div>
+
+<script>
+(function() {
+  const roleSelect = document.getElementById('id_role');
+  if (!roleSelect) return;
+
+  const ROLES_FACULTES = ['DOYEN'];
+  const ROLES_DEPARTEMENTS = ['CHEF_DEPARTEMENT', 'PROFESSEUR', 'SECRETAIRE'];
+
+  function toggle() {
+    const role = roleSelect.value;
+    const facBlock = document.querySelector('[data-scope-block="facultes"]');
+    const depBlock = document.querySelector('[data-scope-block="departements"]');
+    if (facBlock) facBlock.style.display = ROLES_FACULTES.includes(role) ? '' : 'none';
+    if (depBlock) depBlock.style.display = ROLES_DEPARTEMENTS.includes(role) ? '' : 'none';
+  }
+
+  roleSelect.addEventListener('change', toggle);
+  toggle();
+})();
+</script>
 {% endblock %}
