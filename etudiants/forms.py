@@ -3,6 +3,8 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.urls import reverse
 from django.utils import timezone
+import re
+import unicodedata
 
 from academique.models import AnneeAcademique, Cours, Departement, Faculte, Filiere
 from comptes.forms import UtilisateurCreationForm
@@ -20,31 +22,21 @@ def _add_attr(url_name, label="Ajouter"):
 
 
 # ═══════════════════════════════════════════════════════════════
-# GÉNÉRATEURS DE VALEURS UNIQUES (username, matricule)
+# Générateurs (username + matricule)
 # ═══════════════════════════════════════════════════════════════
 
 def _slugify_username_part(value):
-    """Transforme un prénom/nom en fragment de username :
-    accents retirés, espaces → point, minuscules, caractères sûrs."""
-    import re
-    import unicodedata
-
     value = unicodedata.normalize("NFKD", value or "")
     value = value.encode("ascii", "ignore").decode("ascii")
     value = re.sub(r"[^a-zA-Z0-9.\-]+", "", value)
-    value = value.strip(".-").lower()
-    return value or "user"
+    return value.strip(".-").lower() or "user"
 
 
 def generer_username(first_name, last_name):
-    """Construit un username unique : prenom.nom, prenom.nom2, prenom.nom3...
-    Si prénom/nom vides, retombe sur 'etudiant'."""
     prenom = _slugify_username_part(first_name)
     nom = _slugify_username_part(last_name)
-
     base = f"{prenom}.{nom}" if (prenom != "user" or nom != "user") else "etudiant"
     base = base.strip(".-") or "etudiant"
-
     username = base
     suffixe = 1
     while Utilisateur.objects.filter(username=username).exists():
@@ -53,14 +45,13 @@ def generer_username(first_name, last_name):
     return username
 
 
-def generer_matricule():
-    """Format : ETU-<annee courante>-<compteur 5 chiffres>
-    Ex: ETU-2026-00001, ETU-2026-00002...
-    Basé sur le plus grand matricule existant pour l'année courante."""
+def _annee_prefix():
     annee = AnneeAcademique.courante()
-    annee_label = (annee.libelle.split("-")[0] if annee else str(timezone.now().year))
-    prefix = f"ETU-{annee_label}-"
+    return annee.libelle.split("-")[0] if annee else str(timezone.now().year)
 
+
+def generer_matricule():
+    prefix = f"ETU-{_annee_prefix()}-"
     dernier = (
         Etudiant.objects
         .filter(matricule__startswith=prefix)
@@ -78,21 +69,44 @@ def generer_matricule():
     return f"{prefix}{numero:05d}"
 
 
+def _filiere_pour_departement(departement):
+    """Retourne la filière à utiliser pour un département.
+    Si aucune filière active n'existe, en crée une 'Général' automatiquement.
+    Ainsi l'étudiant peut toujours être créé — la notion de filière reste
+    en base pour compatibilité mais n'est plus demandée à l'utilisateur."""
+    filiere = (
+        Filiere.objects.filter(departement=departement, est_active=True)
+        .order_by("nom").first()
+    )
+    if filiere:
+        return filiere
+
+    # Création automatique d'une filière générique
+    code_base = f"GEN-{departement.code}"
+    code = code_base
+    suffixe = 1
+    while Filiere.objects.filter(code=code).exists():
+        suffixe += 1
+        code = f"{code_base}-{suffixe}"
+
+    return Filiere.objects.create(
+        departement=departement,
+        nom=f"Général — {departement.nom}",
+        code=code,
+        duree_annees=3,
+        est_active=True,
+    )
+
+
 # ═══════════════════════════════════════════════════════════════
-# CRÉATION D'ÉTUDIANT
+# Création
 # ═══════════════════════════════════════════════════════════════
 
 class EtudiantCreationForm(UtilisateurCreationForm):
-    """Crée en une seule transaction :
-    - un Utilisateur (role=ETUDIANT), username auto-généré
-    - une fiche Etudiant, matricule auto-généré
+    """Création : l'utilisateur choisit Faculté → Département.
+    La filière est résolue automatiquement (créée si absente).
+    Username et matricule sont auto-générés, invisibles."""
 
-    Cascade faculté → département (la filière n'est plus demandée :
-    elle sera déduite automatiquement de la première filière active
-    du département choisi).
-    """
-
-    # ─── Cascade ───
     faculte = forms.ModelChoiceField(
         queryset=Faculte.objects.none(),
         empty_label="— Sélectionnez une faculté —",
@@ -111,20 +125,14 @@ class EtudiantCreationForm(UtilisateurCreationForm):
         label="Département",
         widget=forms.Select(attrs={"class": "form-select"}),
     )
-
-    # ─── Identité (username dérivé automatiquement) ───
-    # On garde first_name, last_name, email, telephone du parent,
-    # mais on retire username et on le calcule côté serveur.
-
     promotion = forms.IntegerField(
-        min_value=2000,
-        max_value=2100,
+        min_value=2020,
+        max_value=2026,
         widget=forms.NumberInput(attrs={"class": "form-control"}),
-        help_text="Année d'entrée, ex: 2024.",
+        help_text="Année d'entrée (2020 à 2026).",
     )
 
     class Meta(UtilisateurCreationForm.Meta):
-        # Plus de username ni de filiere dans le formulaire
         fields = ["first_name", "last_name", "email", "telephone"]
 
     def __init__(self, *args, utilisateur=None, **kwargs):
@@ -133,7 +141,7 @@ class EtudiantCreationForm(UtilisateurCreationForm):
         # Retirer les champs hérités inutiles
         for champ in (
             "username", "role", "faculte_admin", "departement_admin",
-            "est_actif_compte", "filiere",
+            "est_actif_compte", "filiere", "matricule",
         ):
             self.fields.pop(champ, None)
 
@@ -148,8 +156,14 @@ class EtudiantCreationForm(UtilisateurCreationForm):
         else:
             self.fields["faculte"].queryset = Faculte.objects.filter(est_active=True)
             self.fields["departement"].queryset = Departement.objects.filter(est_actif=True)
+            self.fields["departement"].widget.attrs.update(
+                _add_attr("academique:creer_departement", "Ajouter un département")
+            )
+            self.fields["faculte"].widget.attrs.update(
+                _add_attr("academique:creer_faculte", "Ajouter une faculté")
+            )
 
-        # Pré-remplissage à l'édition
+        # Pré-remplissage édition
         if self.instance and self.instance.pk and self.instance.filiere_id:
             dep = self.instance.filiere.departement
             self.fields["departement"].initial = dep.pk
@@ -157,23 +171,11 @@ class EtudiantCreationForm(UtilisateurCreationForm):
 
     def clean(self):
         cleaned = super().clean()
-        # Cohérence faculté ↔ département
         faculte = cleaned.get("faculte")
         departement = cleaned.get("departement")
         if faculte and departement and departement.faculte_id != faculte.pk:
             raise ValidationError({
                 "departement": "Ce département n'appartient pas à la faculté choisie."
-            })
-
-        # Vérifie qu'il existe au moins une filière active pour ce département
-        if departement and not Filiere.objects.filter(
-            departement=departement, est_active=True
-        ).exists():
-            raise ValidationError({
-                "departement": (
-                    f"Le département « {departement.nom} » n'a aucune filière active. "
-                    "Créez-en une avant d'inscrire un étudiant."
-                )
             })
         return cleaned
 
@@ -185,31 +187,20 @@ class EtudiantCreationForm(UtilisateurCreationForm):
         last_name = self.cleaned_data.get("last_name", "").strip()
         departement = self.cleaned_data["departement"]
 
-        # Filière par défaut = première filière active du département
-        filiere_defaut = (
-            Filiere.objects.filter(departement=departement, est_active=True)
-            .order_by("nom")
-            .first()
-        )
-        if filiere_defaut is None:
-            raise ValidationError(
-                "Impossible de créer l'étudiant : aucune filière active "
-                f"n'existe dans le département « {departement.nom} »."
-            )
-
         try:
             with transaction.atomic():
-                # 1. Créer l'utilisateur avec username auto-généré
+                # Filière auto-créée si absente
+                filiere = _filiere_pour_departement(departement)
+
                 utilisateur = super().save(commit=False)
                 utilisateur.username = generer_username(first_name, last_name)
                 utilisateur.role = Utilisateur.Role.ETUDIANT
                 utilisateur.save()
 
-                # 2. Créer la fiche Etudiant avec matricule auto-généré
                 Etudiant.objects.create(
                     utilisateur=utilisateur,
                     matricule=generer_matricule(),
-                    filiere=filiere_defaut,
+                    filiere=filiere,
                     promotion=self.cleaned_data["promotion"],
                 )
                 return utilisateur
@@ -221,12 +212,10 @@ class EtudiantCreationForm(UtilisateurCreationForm):
 
 
 # ═══════════════════════════════════════════════════════════════
-# ÉDITION D'UNE FICHE EXISTANTE
+# Édition
 # ═══════════════════════════════════════════════════════════════
 
 class EtudiantForm(forms.ModelForm):
-    """Édition : cascade faculté → département (filière déduite automatiquement)."""
-
     faculte = forms.ModelChoiceField(
         queryset=Faculte.objects.none(),
         empty_label="— Sélectionnez une faculté —",
@@ -250,7 +239,9 @@ class EtudiantForm(forms.ModelForm):
         model = Etudiant
         fields = ["promotion", "est_actif"]
         widgets = {
-            "promotion": forms.NumberInput(attrs={"class": "form-control"}),
+            "promotion": forms.NumberInput(attrs={
+                "class": "form-control", "min": 2020, "max": 2026,
+            }),
             "est_actif": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
 
@@ -267,6 +258,12 @@ class EtudiantForm(forms.ModelForm):
         else:
             self.fields["faculte"].queryset = Faculte.objects.filter(est_active=True)
             self.fields["departement"].queryset = Departement.objects.filter(est_actif=True)
+            self.fields["departement"].widget.attrs.update(
+                _add_attr("academique:creer_departement", "Ajouter un département")
+            )
+            self.fields["faculte"].widget.attrs.update(
+                _add_attr("academique:creer_faculte", "Ajouter une faculté")
+            )
 
         if self.instance and self.instance.pk and self.instance.filiere_id:
             dep = self.instance.filiere.departement
@@ -281,37 +278,19 @@ class EtudiantForm(forms.ModelForm):
             raise ValidationError({
                 "departement": "Ce département n'appartient pas à la faculté choisie."
             })
-        if departement and not Filiere.objects.filter(
-            departement=departement, est_active=True
-        ).exists():
-            raise ValidationError({
-                "departement": (
-                    f"Le département « {departement.nom} » n'a aucune filière active."
-                )
-            })
         return cleaned
 
     def save(self, commit=True):
         etudiant = super().save(commit=False)
         departement = self.cleaned_data["departement"]
-
-        filiere_defaut = (
-            Filiere.objects.filter(departement=departement, est_active=True)
-            .order_by("nom").first()
-        )
-        if filiere_defaut is None:
-            raise ValidationError(
-                "Aucune filière active dans le département choisi."
-            )
-        etudiant.filiere = filiere_defaut
-
+        etudiant.filiere = _filiere_pour_departement(departement)
         if commit:
             etudiant.save()
         return etudiant
 
 
 # ═══════════════════════════════════════════════════════════════
-# INSCRIPTIONS ET NOTES (inchangés)
+# Inscriptions et notes
 # ═══════════════════════════════════════════════════════════════
 
 class InscriptionForm(forms.ModelForm):

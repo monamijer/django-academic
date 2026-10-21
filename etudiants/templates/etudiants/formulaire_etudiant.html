@@ -2,14 +2,11 @@
 {% block titre %}{{ titre }}{% endblock %}
 
 {% block contenu %}
-<div class="page-head">
-  <div><h1>{{ titre }}</h1></div>
-</div>
+<div class="page-head"><div><h1>{{ titre }}</h1></div></div>
 
 <div class="panel" style="padding: 1.75rem; max-width: 900px;">
   <form method="post" autocomplete="off">
     {% csrf_token %}
-
     {% if form.non_field_errors %}
       <div class="alert alert-danger">
         {% for err in form.non_field_errors %}<div>{{ err }}</div>{% endfor %}
@@ -17,8 +14,7 @@
     {% endif %}
 
     {# ═══ Identité ═══ #}
-    <h6 class="text-uppercase small fw-bold text-muted mb-3"
-        style="letter-spacing: .08em;">
+    <h6 class="text-uppercase small fw-bold text-muted mb-3" style="letter-spacing: .08em;">
       <i class="bi bi-person-badge"></i> Identité
     </h6>
 
@@ -59,12 +55,10 @@
       {% endif %}
     </div>
 
-    {# ═══ Affectation académique ═══ #}
-    <h6 class="text-uppercase small fw-bold text-muted mt-4 mb-3"
-        style="letter-spacing: .08em;">
+    {# ═══ Affectation ═══ #}
+    <h6 class="text-uppercase small fw-bold text-muted mt-4 mb-3" style="letter-spacing: .08em;">
       <i class="bi bi-building"></i> Affectation académique
     </h6>
-
     <div class="row">
       <div class="col-md-6 mb-3">
         <label class="form-label">{{ form.faculte.label }}</label>
@@ -80,18 +74,16 @@
 
     <div class="alert alert-info small mb-4">
       <i class="bi bi-info-circle"></i>
-      Le <strong>matricule</strong> et le <strong>nom d'utilisateur</strong>
+      Le <strong>nom d'utilisateur</strong> et le <strong>matricule</strong>
       sont générés automatiquement à l'enregistrement.<br>
-      La <strong>filière</strong> sera déduite automatiquement de la première
-      filière active du département choisi.
+      Le rattachement académique se fait au niveau du <strong>département</strong>
+      (la filière interne est gérée automatiquement).
     </div>
 
-    {# ═══ Fiche étudiant ═══ #}
-    <h6 class="text-uppercase small fw-bold text-muted mt-4 mb-3"
-        style="letter-spacing: .08em;">
+    {# ═══ Fiche ═══ #}
+    <h6 class="text-uppercase small fw-bold text-muted mt-4 mb-3" style="letter-spacing: .08em;">
       <i class="bi bi-card-text"></i> Fiche étudiant
     </h6>
-
     <div class="row">
       <div class="col-md-6 mb-3">
         <label class="form-label">{{ form.promotion.label }}</label>
@@ -107,15 +99,11 @@
       {% endif %}
     </div>
 
-    {# ═══ Actions ═══ #}
-    <div class="d-flex gap-2 mt-4 pt-3"
-         style="border-top: 1px solid var(--up-line);">
+    <div class="d-flex gap-2 mt-4 pt-3" style="border-top: 1px solid var(--up-line);">
       <button type="submit" class="btn btn-brand btn-icon">
         <i class="bi bi-check-lg"></i> Enregistrer
       </button>
-      <a href="{% url 'etudiants:liste_etudiants' %}" class="btn btn-outline-secondary">
-        Annuler
-      </a>
+      <a href="{% url 'etudiants:liste_etudiants' %}" class="btn btn-outline-secondary">Annuler</a>
     </div>
   </form>
 </div>
