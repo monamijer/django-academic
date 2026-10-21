@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.urls import reverse
 
-from academique.models import Cours, Filiere
+from academique.models import Cours, Departement, Faculte, Filiere
 from comptes.forms import UtilisateurCreationForm
 from comptes.models import Utilisateur
 
@@ -20,9 +20,39 @@ def _add_attr(url_name, label="Ajouter"):
 
 class EtudiantCreationForm(UtilisateurCreationForm):
     """Crée simultanément le compte Utilisateur (role=ETUDIANT) et la fiche
-    Etudiant. La création est atomique : si la fiche échoue, le compte n'est
-    pas persisté non plus."""
+    Etudiant. La création est atomique.
 
+    Cascade : faculte → departement → filiere.
+    Les champs `faculte` et `departement` ne servent qu'à filtrer côté client
+    (et à pré-remplir en édition), ils ne sont pas sauvegardés tels quels :
+    seule `filiere` est persistée sur la fiche Etudiant.
+    """
+
+    # ─── Cascade (facultatif mais recommandé pour l'UX) ───
+    faculte = forms.ModelChoiceField(
+        queryset=Faculte.objects.none(),
+        empty_label="— Sélectionnez une faculté —",
+        required=False,
+        label="Faculté",
+        widget=forms.Select(attrs={
+            "class": "form-select",
+            "data-cascade": "faculte",
+            "data-target": "id_departement",
+        }),
+    )
+    departement = forms.ModelChoiceField(
+        queryset=Departement.objects.none(),
+        empty_label="— Sélectionnez un département —",
+        required=False,
+        label="Département",
+        widget=forms.Select(attrs={
+            "class": "form-select",
+            "data-cascade": "departement",
+            "data-target": "id_filiere",
+        }),
+    )
+
+    # ─── Fiche étudiant ───
     matricule = forms.CharField(
         max_length=30,
         widget=forms.TextInput(attrs={"class": "form-control", "autocomplete": "off"}),
@@ -31,6 +61,7 @@ class EtudiantCreationForm(UtilisateurCreationForm):
     filiere = forms.ModelChoiceField(
         queryset=Filiere.objects.none(),
         empty_label="— Sélectionnez une filière —",
+        label="Filière",
         widget=forms.Select(attrs={"class": "form-select"}),
     )
     promotion = forms.IntegerField(
@@ -45,33 +76,41 @@ class EtudiantCreationForm(UtilisateurCreationForm):
 
     def __init__(self, *args, utilisateur=None, **kwargs):
         super().__init__(*args, **kwargs)
-        # Ces champs ne font pas partie de Meta.fields, donc ils n'existent
-        # déjà plus dans self.fields. On utilise .pop() défensif au cas où
-        # une sous-classe réintroduirait un champ via Meta.
-        for champ in ("role", "faculte", "departement", "est_actif_compte"):
-            self.fields.pop(champ, None)
 
-        filiere_field = self.fields["filiere"]
+        # Champs hérités inutiles pour un étudiant
+        for champ in ("role", "faculte_admin", "departement_admin", "est_actif_compte"):
+            self.fields.pop(champ, None)
+        # `faculte` et `departement` du parent peuvent exister si Meta a été
+        # modifié ailleurs : on les écrase par nos versions cascade.
+        # (Rien à pop ici : nos champs locaux ont déjà pris le dessus.)
+
+        # ─── Périmètre ───
         if utilisateur and not utilisateur.a_acces_global:
             geres = utilisateur.departements_geres()
-            if geres.exists():
-                filiere_field.queryset = (
-                    Filiere.objects
-                    .filter(departement__in=geres, est_active=True)
-                    .select_related("departement")
-                )
-            else:
-                filiere_field.help_text = (
-                    "Votre compte n'est rattaché à aucun département. "
-                    "Contactez un administrateur."
-                )
-        else:
-            filiere_field.queryset = (
-                Filiere.objects
-                .filter(est_active=True)
+            facs_ids = geres.values_list("faculte_id", flat=True)
+            self.fields["faculte"].queryset = (
+                Faculte.objects.filter(pk__in=facs_ids, est_active=True).distinct()
+            )
+            self.fields["departement"].queryset = geres.filter(est_actif=True)
+            self.fields["filiere"].queryset = (
+                Filiere.objects.filter(departement__in=geres, est_active=True)
                 .select_related("departement")
             )
-            filiere_field.widget.attrs.update(_add_attr("academique:creer_filiere", "Ajouter une filière"))
+        else:
+            self.fields["faculte"].queryset = Faculte.objects.filter(est_active=True)
+            self.fields["departement"].queryset = Departement.objects.filter(est_actif=True)
+            self.fields["filiere"].queryset = (
+                Filiere.objects.filter(est_active=True).select_related("departement")
+            )
+            self.fields["filiere"].widget.attrs.update(
+                _add_attr("academique:creer_filiere", "Ajouter une filière")
+            )
+
+        # ─── Pré-remplissage en édition ───
+        if self.instance and self.instance.pk and self.instance.filiere_id:
+            dep = self.instance.filiere.departement
+            self.fields["departement"].initial = dep.pk
+            self.fields["faculte"].initial = dep.faculte_id
 
     def clean_matricule(self):
         matricule = self.cleaned_data["matricule"].strip()
@@ -107,31 +146,67 @@ class EtudiantCreationForm(UtilisateurCreationForm):
                 "Vérifiez que le matricule et le nom d'utilisateur ne sont pas déjà pris."
             )
 
+
 class EtudiantForm(forms.ModelForm):
+    """Formulaire d'édition d'une fiche étudiant existante (utilisé par
+    modifier_etudiant). Cascade identique à la création."""
+
+    faculte = forms.ModelChoiceField(
+        queryset=Faculte.objects.none(),
+        empty_label="— Sélectionnez une faculté —",
+        required=False,
+        label="Faculté",
+        widget=forms.Select(attrs={
+            "class": "form-select",
+            "data-cascade": "faculte",
+            "data-target": "id_departement",
+        }),
+    )
+    departement = forms.ModelChoiceField(
+        queryset=Departement.objects.none(),
+        empty_label="— Sélectionnez un département —",
+        required=False,
+        label="Département",
+        widget=forms.Select(attrs={
+            "class": "form-select",
+            "data-cascade": "departement",
+            "data-target": "id_filiere",
+        }),
+    )
+
     class Meta:
         model = Etudiant
         fields = ["filiere", "promotion", "est_actif"]
         widgets = {
+            "filiere": forms.Select(attrs={"class": "form-select"}),
             "promotion": forms.NumberInput(attrs={"class": "form-control"}),
             "est_actif": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
 
     def __init__(self, *args, utilisateur=None, **kwargs):
         super().__init__(*args, **kwargs)
-        filiere_field = self.fields["filiere"]
-        filiere_field.widget.attrs.update({"class": "form-select"})
-        filiere_field.empty_label = "— Sélectionnez une filière —"
+        self.fields["filiere"].empty_label = "— Sélectionnez une filière —"
 
         if utilisateur and not utilisateur.a_acces_global:
             geres = utilisateur.departements_geres()
-            if geres.exists():
-                filiere_field.queryset = Filiere.objects.filter(departement__in=geres)
-            else:
-                filiere_field.queryset = Filiere.objects.none()
-                filiere_field.help_text = "Aucun département rattaché à votre compte."
+            facs_ids = geres.values_list("faculte_id", flat=True)
+            self.fields["faculte"].queryset = (
+                Faculte.objects.filter(pk__in=facs_ids, est_active=True).distinct()
+            )
+            self.fields["departement"].queryset = geres.filter(est_actif=True)
+            self.fields["filiere"].queryset = Filiere.objects.filter(
+                departement__in=geres, est_active=True
+            )
         else:
-            filiere_field.queryset = Filiere.objects.filter(est_active=True)
-            filiere_field.widget.attrs.update(_add_attr("academique:creer_filiere", "Ajouter une filière"))
+            self.fields["faculte"].queryset = Faculte.objects.filter(est_active=True)
+            self.fields["departement"].queryset = Departement.objects.filter(est_actif=True)
+            self.fields["filiere"].queryset = Filiere.objects.filter(est_active=True)
+
+        # Pré-remplir la cascade
+        if self.instance and self.instance.pk and self.instance.filiere_id:
+            dep = self.instance.filiere.departement
+            self.fields["departement"].initial = dep.pk
+            self.fields["faculte"].initial = dep.faculte_id
 
 
 class InscriptionForm(forms.ModelForm):
@@ -184,8 +259,7 @@ class NoteForm(forms.ModelForm):
     def __init__(self, *args, professeur=None, cours_fige=None, **kwargs):
         super().__init__(*args, **kwargs)
         if professeur is not None:
-            cours_du_prof = professeur.cours_enseignes.all()
-            self.fields["cours"].queryset = cours_du_prof
+            self.fields["cours"].queryset = professeur.cours_enseignes.all()
             if cours_fige is not None:
                 self.fields["cours"].initial = cours_fige
                 self.fields["cours"].widget = forms.HiddenInput()

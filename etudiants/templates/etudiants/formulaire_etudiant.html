@@ -1,36 +1,132 @@
 {% extends "base.html" %}
 {% block titre %}{{ titre }}{% endblock %}
+
 {% block contenu %}
-<div class="page-head"><div><h1>{{ titre }}</h1></div></div>
-<div class="panel col-md-8" style="padding:1.5rem;">
+<div class="page-head">
+  <div>
+    <h1>{{ titre }}</h1>
+  </div>
+</div>
+
+<div class="panel" style="padding: 1.75rem; max-width: 900px;">
   <form method="post" autocomplete="off">
     {% csrf_token %}
+
     {% if form.non_field_errors %}
       <div class="alert alert-danger">
         {% for err in form.non_field_errors %}<div>{{ err }}</div>{% endfor %}
       </div>
     {% endif %}
 
+    <h6 class="text-uppercase small fw-bold text-muted mb-3"
+        style="letter-spacing: .08em;">
+      <i class="bi bi-person-badge"></i> Identité du compte
+    </h6>
+
     <div class="row">
-    {% for field in form %}
-      <div class="col-md-6 mb-3 {% if field.field.widget.input_type == 'checkbox' %}form-check{% endif %}">
-        {% if field.field.widget.input_type == 'checkbox' %}
-          {{ field }} <label class="form-check-label">{{ field.label }}</label>
-        {% else %}
-          <label class="form-label">{{ field.label }}</label>{{ field }}
-        {% endif %}
-        {% if field.help_text %}
-          <div class="form-text small">{{ field.help_text }}</div>
-        {% endif %}
-        {% for error in field.errors %}
-          <div class="text-danger small">{{ error }}</div>
-        {% endfor %}
+      <div class="col-md-6 mb-3">
+        <label class="form-label">{{ form.username.label }}</label>
+        {{ form.username }}
+        {% if form.username.help_text %}<div class="form-text">{{ form.username.help_text }}</div>{% endif %}
+        {% for e in form.username.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
       </div>
-    {% endfor %}
+      <div class="col-md-6 mb-3">
+        <label class="form-label">{{ form.email.label }}</label>
+        {{ form.email }}
+        {% for e in form.email.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">{{ form.first_name.label }}</label>
+        {{ form.first_name }}
+        {% for e in form.first_name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">{{ form.last_name.label }}</label>
+        {{ form.last_name }}
+        {% for e in form.last_name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">{{ form.telephone.label }}</label>
+        {{ form.telephone }}
+        {% for e in form.telephone.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      {% if form.password1 %}
+      <div class="col-md-6 mb-3">
+        <label class="form-label">{{ form.password1.label }}</label>
+        {{ form.password1 }}
+        {% for e in form.password1.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      {% endif %}
+      {% if form.password2 %}
+      <div class="col-md-6 mb-3">
+        <label class="form-label">{{ form.password2.label }}</label>
+        {{ form.password2 }}
+        {% for e in form.password2.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      {% endif %}
     </div>
 
-    <button class="btn btn-brand btn-icon"><i class="bi bi-check-lg"></i> Enregistrer</button>
-    <a href="{% url 'etudiants:liste_etudiants' %}" class="btn btn-outline-secondary">Annuler</a>
+    <h6 class="text-uppercase small fw-bold text-muted mt-4 mb-3"
+        style="letter-spacing: .08em;">
+      <i class="bi bi-building"></i> Affectation académique
+    </h6>
+
+    <div class="row">
+      <div class="col-md-4 mb-3">
+        <label class="form-label">{{ form.faculte.label }}</label>
+        {{ form.faculte }}
+        {% for e in form.faculte.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="col-md-4 mb-3">
+        <label class="form-label">{{ form.departement.label }}</label>
+        {{ form.departement }}
+        {% for e in form.departement.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="col-md-4 mb-3">
+        <label class="form-label">{{ form.filiere.label }}</label>
+        {{ form.filiere }}
+        {% if form.filiere.help_text %}<div class="form-text">{{ form.filiere.help_text }}</div>{% endif %}
+        {% for e in form.filiere.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+    </div>
+
+    <h6 class="text-uppercase small fw-bold text-muted mt-4 mb-3"
+        style="letter-spacing: .08em;">
+      <i class="bi bi-card-text"></i> Fiche étudiant
+    </h6>
+
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label class="form-label">{{ form.matricule.label }}</label>
+        {{ form.matricule }}
+        {% if form.matricule.help_text %}<div class="form-text">{{ form.matricule.help_text }}</div>{% endif %}
+        {% for e in form.matricule.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">{{ form.promotion.label }}</label>
+        {{ form.promotion }}
+        {% if form.promotion.help_text %}<div class="form-text">{{ form.promotion.help_text }}</div>{% endif %}
+        {% for e in form.promotion.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+
+      {# Champ `est_actif` (visible en édition seulement) #}
+      {% if form.est_actif %}
+      <div class="col-md-6 mb-3 form-check ps-4">
+        {{ form.est_actif }}
+        <label class="form-check-label">{{ form.est_actif.label }}</label>
+      </div>
+      {% endif %}
+    </div>
+
+    {# ─── Actions ─── #}
+    <div class="d-flex gap-2 mt-4 pt-3" style="border-top: 1px solid var(--up-line);">
+      <button type="submit" class="btn btn-brand btn-icon">
+        <i class="bi bi-check-lg"></i> Enregistrer
+      </button>
+      <a href="{% url 'etudiants:liste_etudiants' %}" class="btn btn-outline-secondary">
+        Annuler
+      </a>
+    </div>
   </form>
 </div>
 {% endblock %}
