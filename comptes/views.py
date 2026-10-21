@@ -153,7 +153,7 @@ def tableau_bord(request):
         departements = u.departements_geres()
         etudiants = Etudiant.objects.filter(filiere__departement__in=departements, est_actif=True)
         contexte.update({
-            "departements_liste": u.departements_gérés.all(),
+            "departements_liste": u.departements_geres(),
             "nb_etudiants": etudiants.count(),
             "nb_cours": Cours.objects.filter(departement__in=departements, est_actif=True).count(),
             "etudiants_en_difficulte": [e for e in etudiants if e.en_difficulte][:8],
@@ -169,7 +169,7 @@ def tableau_bord(request):
         departements = u.departements_geres()
         etudiants_dept = Etudiant.objects.filter(filiere__departement__in=departements)
         contexte.update({
-            "departements_liste": u.departements_gérés.all(),
+            "departements_liste": u.departements_geres(),
             "nb_etudiants": etudiants_dept.count(),
             "derniers_etudiants": etudiants_dept.select_related("utilisateur", "filiere").order_by("-pk")[:6],
         })
@@ -258,10 +258,12 @@ def creer_utilisateur(request):
     })
 
 
+
 @exiger_admin_systeme
 def modifier_utilisateur(request, pk):
     u = get_object_or_404(Utilisateur, pk=pk)
-    # Les comptes étudiants se modifient via la fiche étudiant dédiée
+
+    # Les comptes étudiants se modifient via leur fiche dédiée.
     if u.role == Utilisateur.Role.ETUDIANT and hasattr(u, "fiche_etudiant"):
         messages.info(
             request,
@@ -269,39 +271,99 @@ def modifier_utilisateur(request, pk):
             "son niveau, son département ou ses informations académiques.",
         )
         return redirect("etudiants:modifier_etudiant", pk=u.fiche_etudiant.pk)
+
     if request.method == "POST":
         form = UtilisateurForm(request.POST, instance=u)
-        if form.is_valid():
-            form.save()
-            enregistrer_activite(request.user, "MODIFICATION", "Utilisateur", u.pk, str(u))
-            messages.success(request, f"Compte « {u} » mis à jour.")
-            return redirect("comptes:liste_utilisateurs")
     else:
         form = UtilisateurForm(instance=u)
-    return render(request, "comptes/formulaire_utilisateur.html", {"form": form, "titre": f"Modifier {u}", "creation": False})
+
+    # Empêche de modifier le statut du compte administrateur ou son propre statut.
+    if u.role == Utilisateur.Role.ADMIN_SYSTEME:
+        form.fields["est_actif_compte"].disabled = True
+        form.initial["est_actif_compte"] = True
+    elif u.pk == request.user.pk:
+        form.fields["est_actif_compte"].disabled = True
+        form.initial["est_actif_compte"] = u.est_actif_compte
+
+    if request.method == "POST" and form.is_valid():
+        if u.role == Utilisateur.Role.ADMIN_SYSTEME:
+            form.instance.est_actif_compte = True
+
+        form.save()
+        enregistrer_activite(
+            request.user, "MODIFICATION", "Utilisateur", u.pk, str(u)
+        )
+        messages.success(request, f"Compte « {u} » mis à jour.")
+        return redirect("comptes:liste_utilisateurs")
+
+    return render(request, "comptes/formulaire_utilisateur.html", {
+        "form": form,
+        "titre": f"Modifier {u}",
+        "creation": False,
+    })
 
 
 @exiger_admin_systeme
 def basculer_activation_utilisateur(request, pk):
     u = get_object_or_404(Utilisateur, pk=pk)
+
+    if u.role == Utilisateur.Role.ADMIN_SYSTEME:
+        messages.error(
+            request,
+            "Le compte administrateur système ne peut pas être désactivé.",
+        )
+        return redirect("comptes:liste_utilisateurs")
+
+    if u.pk == request.user.pk:
+        messages.error(request, "Vous ne pouvez pas désactiver votre propre compte.")
+        return redirect("comptes:liste_utilisateurs")
+
     u.est_actif_compte = not u.est_actif_compte
     u.save()
-    enregistrer_activite(request.user, "DESACTIVATION", "Utilisateur", u.pk, str(u),
-                          details="Réactivé" if u.est_actif_compte else "Désactivé")
-    messages.success(request, f"Compte « {u} » {'réactivé' if u.est_actif_compte else 'désactivé'}.")
+
+    enregistrer_activite(
+        request.user,
+        "DESACTIVATION",
+        "Utilisateur",
+        u.pk,
+        str(u),
+        details="Réactivé" if u.est_actif_compte else "Désactivé",
+    )
+    messages.success(
+        request,
+        f"Compte « {u} » {'réactivé' if u.est_actif_compte else 'désactivé'}.",
+    )
     return redirect("comptes:liste_utilisateurs")
 
 
 @exiger_admin_systeme
 def supprimer_utilisateur(request, pk):
     u = get_object_or_404(Utilisateur, pk=pk)
+
+    if u.role == Utilisateur.Role.ADMIN_SYSTEME:
+        messages.error(
+            request,
+            "Le compte administrateur système ne peut pas être supprimé ici.",
+        )
+        return redirect("comptes:liste_utilisateurs")
+
+    if u.pk == request.user.pk:
+        messages.error(request, "Vous ne pouvez pas supprimer votre propre compte.")
+        return redirect("comptes:liste_utilisateurs")
+
     if request.method == "POST":
         repr_u = str(u)
-        enregistrer_activite(request.user, "SUPPRESSION", "Utilisateur", u.pk, repr_u)
+        enregistrer_activite(
+            request.user, "SUPPRESSION", "Utilisateur", u.pk, repr_u
+        )
         u.delete()
         messages.success(request, f"Compte « {repr_u} » supprimé.")
         return redirect("comptes:liste_utilisateurs")
-    return render(request, "comptes/confirmer_suppression.html", {"objet": u, "type_objet": "le compte"})
+
+    return render(request, "comptes/confirmer_suppression.html", {
+        "objet": u,
+        "type_objet": "le compte",
+    })
 
 
 class HistoriqueActiviteView(LoginRequiredMixin, ListView):
