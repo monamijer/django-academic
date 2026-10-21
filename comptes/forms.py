@@ -109,12 +109,29 @@ class UtilisateurForm(forms.ModelForm):
             self.fields["faculte"].empty_label = "— Aucune —"
         if "departement" in self.fields:
             self.fields["departement"].empty_label = "— Aucun —"
+        # On masque ADMIN_SYSTEME du select : il ne doit exister qu'un seul admin.
+        if "role" in self.fields:
+            self.fields["role"].choices = [
+                (code, label) for code, label in self.fields["role"].choices
+                if code != Utilisateur.Role.ADMIN_SYSTEME
+            ]
 
     def clean(self):
         cleaned = super().clean()
         role = cleaned.get("role")
         faculte = cleaned.get("faculte")
         departement = cleaned.get("departement")
+
+        # Un seul administrateur système au monde
+        if role == Utilisateur.Role.ADMIN_SYSTEME:
+            existant = Utilisateur.objects.filter(role=Utilisateur.Role.ADMIN_SYSTEME)
+            if self.instance.pk:
+                existant = existant.exclude(pk=self.instance.pk)
+            if existant.exists():
+                raise ValidationError({
+                    "role": "Un administrateur système existe déjà. "
+                            "Ce rôle ne peut pas être attribué à un second compte."
+                })
 
         if role == Utilisateur.Role.DOYEN and not faculte:
             raise ValidationError({"faculte": "Un Doyen doit être rattaché à une faculté."})

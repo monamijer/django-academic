@@ -223,6 +223,25 @@ class EtudiantCreationForm(UtilisateurCreationForm):
 # ═══════════════════════════════════════════════════════════════
 
 class EtudiantForm(forms.ModelForm):
+    username = forms.CharField(
+        required=False,
+        label="Nom d'utilisateur",
+        widget=forms.TextInput(attrs={
+            "class": "form-control",
+            "readonly": "readonly",
+            "style": "background:#F7F8FA;",
+        }),
+        help_text="Identifiant de connexion — non modifiable.",
+    )
+    matricule = forms.CharField(
+        required=False,
+        label="Matricule",
+        widget=forms.TextInput(attrs={
+            "class": "form-control",
+            "readonly": "readonly",
+            "style": "background:#F7F8FA;",
+        }),
+    )
     faculte = forms.ModelChoiceField(
         queryset=Faculte.objects.none(),
         empty_label="— Sélectionnez une faculté —",
@@ -273,10 +292,14 @@ class EtudiantForm(forms.ModelForm):
                 _add_attr("academique:creer_faculte", "Ajouter une faculté")
             )
 
+        if self.instance and self.instance.pk:
+            self.fields["username"].initial = self.instance.utilisateur.username
+            self.fields["matricule"].initial = self.instance.matricule
         if self.instance and self.instance.pk and self.instance.filiere_id:
             dep = self.instance.filiere.departement
             self.fields["departement"].initial = dep.pk
             self.fields["faculte"].initial = dep.faculte_id
+            self.fields["departement"].widget.attrs["data-initial"] = str(dep.pk)
 
     def clean(self):
         cleaned = super().clean()

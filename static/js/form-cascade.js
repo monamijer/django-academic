@@ -1,12 +1,13 @@
 /* ═══════════════════════════════════════════════════════════
-   FORM CASCADE — Faculté → Département (filière déduite serveur)
-   Réinjecte aussi les boutons "+ Ajouter" après repeuplement.
-   Dépend de form-add.js qui expose window.UNIVPILOT_addButtons().
+   FORM CASCADE — Faculté → Département
+   - Recharge les départements au chargement si faculte est pré-remplie
+   - Ré-applique la valeur initiale du département après repeuplement
+   - Réinjecte les boutons "+ Ajouter" après repeuplement
    ═══════════════════════════════════════════════════════════ */
 
 const API_DEPARTEMENTS = '/academique/api/departements/';
 
-const remplirSelect = (select, items, placeholder) => {
+const remplirSelect = (select, items, placeholder, valeurInitiale) => {
   if (!select) return;
   select.innerHTML = '';
   const empty = document.createElement('option');
@@ -17,6 +18,9 @@ const remplirSelect = (select, items, placeholder) => {
     const opt = document.createElement('option');
     opt.value = item.id;
     opt.textContent = item.nom + (item.code ? ` (${item.code})` : '');
+    if (valeurInitiale && String(valeurInitiale) === String(item.id)) {
+      opt.selected = true;
+    }
     select.appendChild(opt);
   });
 };
@@ -44,27 +48,38 @@ const initCascade = () => {
   const departementSelect = document.getElementById('id_departement');
   if (!faculteSelect || !departementSelect) return;
 
-  faculteSelect.addEventListener('change', async (event) => {
-    const faculteId = event.target.value;
-    // Réinitialise immédiatement pour montrer le rechargement
-    remplirSelect(departementSelect, [], '— Chargement… —');
+  // Mémorise la valeur initiale du département (utile en édition)
+  const valeurDepartementInitiale =
+    departementSelect.dataset.initial ||
+    departementSelect.value ||
+    '';
 
-    const departements = faculteId
-      ? await charger(`${API_DEPARTEMENTS}?faculte=${faculteId}`)
-      : [];
+  const rechargerDepartements = async (faculteId, selectionnerId = null) => {
+    if (!faculteId) {
+      remplirSelect(departementSelect, [], '— Sélectionnez d\'abord une faculté —');
+      refreshAddButtons();
+      return;
+    }
+    remplirSelect(departementSelect, [], '— Chargement… —');
+    const departements = await charger(`${API_DEPARTEMENTS}?faculte=${faculteId}`);
     remplirSelect(
       departementSelect,
       departements,
       departements.length
         ? '— Sélectionnez un département —'
-        : '— Aucun département dans cette faculté —'
+        : '— Aucun département dans cette faculté —',
+      selectionnerId
     );
     refreshAddButtons();
+  };
+
+  faculteSelect.addEventListener('change', (event) => {
+    rechargerDepartements(event.target.value);
   });
 
-  // Si faculte déjà pré-remplie (édition), déclencher le chargement
+  // Déclencher au chargement si faculte est déjà choisie
   if (faculteSelect.value) {
-    faculteSelect.dispatchEvent(new Event('change'));
+    rechargerDepartements(faculteSelect.value, valeurDepartementInitiale);
   }
 };
 
