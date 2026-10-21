@@ -93,9 +93,6 @@ class EtudiantCreationForm(UtilisateurCreationForm):
             with transaction.atomic():
                 utilisateur = super().save(commit=False)
                 utilisateur.role = Utilisateur.Role.ETUDIANT
-                # On indique au signal post_save de NE PAS créer de fiche :
-                # c'est cette méthode qui s'en charge juste après.
-                utilisateur._skip_etudiant_signal = True
                 utilisateur.save()
                 Etudiant.objects.create(
                     utilisateur=utilisateur,
