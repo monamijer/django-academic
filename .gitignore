@@ -4,3 +4,7 @@ __pycache__/
 db.sqlite3
 staticfiles/
 .env
+
+# Local backups — never commit
+/backups/
+/db.sqlite3.backup-*
