@@ -23,50 +23,53 @@ def log_deconnexion(sender, request, user, **kwargs):
         )
 
 
-@receiver(post_save, sender=Utilisateur)
-def creer_fiche_etudiant_si_manquante(sender, instance, created, **kwargs):
-    """Filet de sécurité : tout Utilisateur role=ETUDIANT doit avoir une
-    fiche Etudiant. Créée provisoirement si aucun autre code ne s'en charge
-    (admin Django, script, import).
-
-    Si EtudiantCreationForm crée la fiche manuellement, il pose le flag
-    `_skip_etudiant_signal=True` sur l'instance AVANT save() pour que ce
-    signal ne double pas la création.
-    """
-    if instance.role != Utilisateur.Role.ETUDIANT:
-        return
-
-    # Respecte le flag posé par EtudiantCreationForm.save().
-    if getattr(instance, "_skip_etudiant_signal", False):
-        return
-
-    # Import différé pour éviter une dépendance circulaire au démarrage.
+def _creer_fiche_provisoire(instance):
+    """Crée une fiche Etudiant provisoire si elle n'existe pas déjà.
+    Exécutée APRÈS le commit de la transaction courante."""
     from etudiants.models import Etudiant
 
-    # Si une fiche existe déjà, ne rien faire (ex: instance rechargée).
+    # Re-vérifie au moment du commit : si le form a déjà créé la fiche,
+    # on ne fait rien.
     if Etudiant.objects.filter(utilisateur=instance).exists():
         return
 
-    with transaction.atomic():
-        base = f"AUTO-{instance.pk}"
-        matricule = base
-        suffixe = 1
-        while Etudiant.objects.filter(matricule=matricule).exists():
-            suffixe += 1
-            matricule = f"{base}-{suffixe}"
+    base = f"AUTO-{instance.pk}"
+    matricule = base
+    suffixe = 1
+    while Etudiant.objects.filter(matricule=matricule).exists():
+        suffixe += 1
+        matricule = f"{base}-{suffixe}"
 
-        filiere_defaut = None
-        if instance.departement_id:
-            from academique.models import Filiere
-            filiere_defaut = (
-                Filiere.objects
-                .filter(departement=instance.departement, est_active=True)
-                .first()
-            )
-
-        Etudiant.objects.create(
-            utilisateur=instance,
-            matricule=matricule,
-            filiere=filiere_defaut,
-            promotion=None,
+    filiere_defaut = None
+    if instance.departement_id:
+        from academique.models import Filiere
+        filiere_defaut = (
+            Filiere.objects
+            .filter(departement=instance.departement, est_active=True)
+            .first()
         )
+
+    Etudiant.objects.create(
+        utilisateur=instance,
+        matricule=matricule,
+        filiere=filiere_defaut,
+        promotion=None,
+    )
+
+
+@receiver(post_save, sender=Utilisateur)
+def creer_fiche_etudiant_si_manquante(sender, instance, created, **kwargs):
+    """Crée une fiche Etudiant provisoire pour tout Utilisateur
+    role=ETUDIANT créé en dehors du formulaire dédié.
+
+    On diffère la création à `transaction.on_commit` : quand le formulaire
+    EtudiantCreationForm est utilisé, sa propre transaction inclut la
+    création de la fiche, donc au moment du commit, la fiche existe déjà
+    et on ne fait rien.
+    """
+    if not created:
+        return
+    if instance.role != Utilisateur.Role.ETUDIANT:
+        return
+
+    transaction.on_commit(lambda: _creer_fiche_provisoire(instance))
