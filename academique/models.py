@@ -63,11 +63,26 @@ class AnneeAcademique(models.Model):
         return cls.objects.filter(est_courante=True).first()
 
 
+class Niveau(models.TextChoices):
+    """Niveau d'études partagé par Cours et Etudiant."""
+    BAC1 = "BAC1", "Baccalauréat 1"
+    BAC2 = "BAC2", "Baccalauréat 2"
+    BAC3 = "BAC3", "Baccalauréat 3"
+    MASTER1 = "MASTER1", "Master 1"
+    MASTER2 = "MASTER2", "Master 2"
+
+
 class Cours(models.Model):
     departement = models.ForeignKey(Departement, on_delete=models.CASCADE, related_name="cours")
     nom = models.CharField(max_length=150)
     code = models.CharField(max_length=15, unique=True)
     credits = models.PositiveSmallIntegerField(default=3)
+    niveau = models.CharField(
+        max_length=10,
+        choices=Niveau.choices,
+        default=Niveau.BAC1,
+        help_text="Niveau d'études requis pour ce cours.",
+    )
     professeurs = models.ManyToManyField(
         settings.AUTH_USER_MODEL, related_name="cours_enseignes", blank=True,
     )
@@ -89,10 +104,13 @@ class Cours(models.Model):
             qs = qs.filter(annee_academique=annee)
         return max(self.capacite_max - qs.count(), 0)
 
+    @property
+    def professeur_principal(self):
+        return self.professeurs.first()
+
 
 class Seance(models.Model):
-    """Créneau hebdomadaire d'un cours (jour, heure de début et de fin, salle).
-    Alimente l'emploi du temps de l'étudiant et du professeur."""
+    """Créneau hebdomadaire d'un cours."""
 
     class Jour(models.IntegerChoices):
         LUNDI = 0, "Lundi"

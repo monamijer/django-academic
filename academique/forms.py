@@ -1,12 +1,10 @@
 from django import forms
 from django.urls import reverse
 
-from .models import AnneeAcademique, Cours, Departement, Faculte, Filiere
+from .models import AnneeAcademique, Cours, Departement, Faculte, Filiere, Niveau
 
 
 def _add_attr(url_name, label="Ajouter"):
-    """Renvoie les attributs HTML du select pour afficher un bouton
-    '+ Ajouter' qui pointe vers une URL RÉSOLUE (pas un nom Django)."""
     try:
         url = reverse(url_name)
     except Exception:
@@ -52,6 +50,8 @@ class DepartementForm(forms.ModelForm):
 
 
 class FiliereForm(forms.ModelForm):
+    """Conservé pour compatibilité mais la filière n'apparaît plus
+    dans les formulaires étudiant/cours."""
     class Meta:
         model = Filiere
         fields = ["departement", "nom", "code", "duree_annees", "est_active"]
@@ -70,29 +70,40 @@ class FiliereForm(forms.ModelForm):
 
         if utilisateur and not utilisateur.a_acces_global:
             geres = utilisateur.departements_geres()
-            if geres.exists():
-                dep_field.queryset = geres
-            else:
-                dep_field.queryset = Departement.objects.none()
-                dep_field.help_text = (
-                    "Votre compte n'est rattaché à aucun département. "
-                    "Contactez un administrateur."
-                )
+            dep_field.queryset = geres if geres.exists() else Departement.objects.none()
         else:
             dep_field.queryset = Departement.objects.filter(est_actif=True)
-            dep_field.widget.attrs.update(_add_attr("academique:creer_departement", "Ajouter un département"))
 
 
 class CoursForm(forms.ModelForm):
+    """Formulaire cours : un seul professeur principal sélectionnable,
+    niveau parmi BAC1..MASTER2, capacité bornée."""
+
+    professeur_principal = forms.ModelChoiceField(
+        queryset=None,
+        required=False,
+        empty_label="— Aucun professeur assigné —",
+        label="Professeur",
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+
     class Meta:
         model = Cours
-        fields = ["departement", "nom", "code", "credits", "capacite_max", "professeurs", "est_actif"]
+        fields = [
+            "departement", "nom", "code", "credits", "niveau",
+            "capacite_max", "est_actif",
+        ]
         widgets = {
+            "departement": forms.Select(attrs={"class": "form-select"}),
             "nom": forms.TextInput(attrs={"class": "form-control"}),
             "code": forms.TextInput(attrs={"class": "form-control"}),
-            "credits": forms.NumberInput(attrs={"class": "form-control"}),
-            "capacite_max": forms.NumberInput(attrs={"class": "form-control"}),
-            "professeurs": forms.SelectMultiple(attrs={"class": "form-select", "size": 6}),
+            "credits": forms.NumberInput(attrs={
+                "class": "form-control", "min": 1, "max": 30, "step": 1,
+            }),
+            "niveau": forms.Select(attrs={"class": "form-select"}),
+            "capacite_max": forms.NumberInput(attrs={
+                "class": "form-control", "min": 5, "max": 500, "step": 5,
+            }),
             "est_actif": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
 
@@ -100,31 +111,40 @@ class CoursForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         from comptes.models import Utilisateur
 
+        # Département
         dep_field = self.fields["departement"]
-        dep_field.widget.attrs.update({"class": "form-select"})
         dep_field.empty_label = "— Sélectionnez un département —"
-
-        prof_field = self.fields["professeurs"]
-        prof_field.empty_label = None
-        prof_field.help_text = "Astuce : Ctrl (Cmd) pour sélectionner plusieurs professeurs."
-        prof_field.queryset = Utilisateur.objects.filter(
-            role__in=[
-                Utilisateur.Role.PROFESSEUR,
-                Utilisateur.Role.CHEF_DEPARTEMENT,
-            ]
-        ).order_by("last_name", "first_name")
-
         if utilisateur and not utilisateur.a_acces_global:
             geres = utilisateur.departements_geres()
-            if geres.exists():
-                dep_field.queryset = geres
-                prof_field.queryset = prof_field.queryset.filter(departement__in=geres)
-            else:
-                dep_field.queryset = Departement.objects.none()
-                dep_field.help_text = (
-                    "Votre compte n'est rattaché à aucun département. "
-                    "Contactez un administrateur."
-                )
+            dep_field.queryset = geres if geres.exists() else Departement.objects.none()
         else:
             dep_field.queryset = Departement.objects.filter(est_actif=True)
             dep_field.widget.attrs.update(_add_attr("academique:creer_departement", "Ajouter un département"))
+
+        # Professeur (unique côté UI)
+        prof_field = self.fields["professeur_principal"]
+        prof_field.queryset = Utilisateur.objects.filter(
+            role__in=[Utilisateur.Role.PROFESSEUR, Utilisateur.Role.CHEF_DEPARTEMENT]
+        ).order_by("last_name", "first_name")
+
+        # En édition, pré-remplir avec le premier prof actuel
+        if self.instance and self.instance.pk:
+            prof_field.initial = self.instance.professeurs.first()
+
+        # Valeurs par défaut utiles
+        if not self.instance or not self.instance.pk:
+            self.fields["niveau"].initial = Niveau.BAC1
+            self.fields["capacite_max"].initial = 60
+            self.fields["credits"].initial = 3
+
+    def save(self, commit=True):
+        cours = super().save(commit=False)
+        if commit:
+            cours.save()
+            # Resynchronise la M2M : un seul prof affiché = un seul prof en base
+            prof = self.cleaned_data.get("professeur_principal")
+            if prof:
+                cours.professeurs.set([prof])
+            else:
+                cours.professeurs.clear()
+        return cours

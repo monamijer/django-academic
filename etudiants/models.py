@@ -2,12 +2,11 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from academique.models import AnneeAcademique, Cours, Filiere
+from academique.models import AnneeAcademique, Cours, Filiere, Niveau
 
 
 class Etudiant(models.Model):
-    """Extension du compte Utilisateur (role=ETUDIANT) avec les informations
-    propres à un étudiant : matricule, filière, promotion."""
+    """Extension du compte Utilisateur (role=ETUDIANT)."""
 
     utilisateur = models.OneToOneField(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
@@ -18,6 +17,12 @@ class Etudiant(models.Model):
         Filiere, on_delete=models.PROTECT, related_name="etudiants",
         null=True, blank=True,
         help_text="Null tant que la fiche provisoire n'a pas été complétée."
+    )
+    niveau = models.CharField(
+        max_length=10,
+        choices=Niveau.choices,
+        default=Niveau.BAC1,
+        help_text="Niveau d'études actuel.",
     )
     promotion = models.PositiveSmallIntegerField(
         null=True, blank=True,
