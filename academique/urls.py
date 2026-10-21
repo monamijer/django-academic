@@ -16,4 +16,6 @@ urlpatterns = [
     path("cours/", views.liste_cours, name="liste_cours"),
     path("cours/ajouter/", views.creer_cours, name="creer_cours"),
     path("cours/<int:pk>/modifier/", views.modifier_cours, name="modifier_cours"),
+    path("api/departements/", views.api_departements, name="api_departements"),
+    path("api/filieres/", views.api_filieres, name="api_filieres"),
 ]

@@ -9,6 +9,8 @@ from comptes.models import enregistrer_activite
 from .forms import CoursForm, DepartementForm, FaculteForm, FiliereForm
 from .models import Cours, Departement, Faculte, Filiere
 
+from django.http import JsonResponse
+
 
 @login_required
 def liste_facultes(request):
@@ -180,3 +182,30 @@ def modifier_cours(request, pk):
     else:
         form = CoursForm(instance=cours, utilisateur=u)
     return render(request, "academique/formulaire.html", {"form": form, "titre": f"Modifier {cours}"})
+
+@login_required
+def api_departements(request):
+    """Retourne les départements d'une faculté (JSON)."""
+    faculte_id = request.GET.get("faculte")
+    qs = Departement.objects.filter(est_actif=True)
+    if faculte_id:
+        qs = qs.filter(faculte_id=faculte_id)
+    else:
+        qs = qs.none()
+    return JsonResponse({
+        "results": [{"id": d.pk, "nom": d.nom, "code": d.code} for d in qs.order_by("nom")],
+    })
+
+
+@login_required
+def api_filieres(request):
+    """Retourne les filières d'un département (JSON)."""
+    departement_id = request.GET.get("departement")
+    qs = Filiere.objects.filter(est_active=True)
+    if departement_id:
+        qs = qs.filter(departement_id=departement_id)
+    else:
+        qs = qs.none()
+    return JsonResponse({
+        "results": [{"id": f.pk, "nom": f.nom, "code": f.code} for f in qs.order_by("nom")],
+    })
