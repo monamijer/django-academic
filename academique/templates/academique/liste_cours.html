@@ -2,33 +2,71 @@
 {% block titre %}Cours{% endblock %}
 {% block contenu %}
 <div class="page-head">
-  <div><h1>Cours</h1><div class="subtitle">{{ page_obj.paginator.count }} cours</div></div>
-  {% if user.role != "PROFESSEUR" %}
-  <a href="{% url 'academique:creer_cours' %}" class="btn btn-brand btn-icon"><i class="bi bi-plus-lg"></i> Ajouter</a>
+  <div>
+    <h1>Cours</h1>
+    <div class="subtitle">{{ page_obj.paginator.count }} cours</div>
+  </div>
+  {% if user.role != 'PROFESSEUR' %}
+  <a href="{% url 'academique:creer_cours' %}" class="btn btn-brand btn-icon">
+    <i class="bi bi-plus-lg"></i> Ajouter
+  </a>
   {% endif %}
 </div>
+
 <form method="get" class="filter-bar no-print">
-  <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Rechercher...">
-  <button class="btn btn-outline-brand btn-icon"><i class="bi bi-search"></i> Rechercher</button>
+  <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Nom ou code…">
+  <select name="niveau" class="form-select">
+    <option value="">— Tous les niveaux —</option>
+    {% for code, label in niveaux %}
+      <option value="{{ code }}" {% if niveau == code %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn btn-outline-brand btn-icon">
+    <i class="bi bi-search"></i> Rechercher
+  </button>
+  {% if q or niveau %}
+    <a href="{% url 'academique:liste_cours' %}" class="btn btn-outline-secondary">
+      Réinitialiser
+    </a>
+  {% endif %}
 </form>
+
 <div class="person-grid">
   {% for c in page_obj %}
   <div class="person-card">
-    <div class="swatch" style="background:var(--brand);"></div>
+    <div class="swatch" style="background: var(--up-brand);"></div>
     <div class="body">
-      <span class="cat-tag">{{ c.departement.nom }}</span>
+      <span class="cat-tag">
+        {{ c.departement.nom }}
+        · <span class="up-tag up-tag--muted">{{ c.get_niveau_display }}</span>
+      </span>
       <span class="name">{{ c.nom }}</span>
       <span class="ref">{{ c.code }} — {{ c.credits }} crédits</span>
-      <span class="tag tag-muted">{{ c.inscriptions.count }}/{{ c.capacite_max }} inscrits</span>
-      {% if not c.est_actif %}<span class="tag tag-bad">Inactif</span>{% endif %}
+      {% if c.professeurs.all %}
+        <div class="small text-muted mt-1">
+          <i class="bi bi-person-badge"></i>
+          {% for p in c.professeurs.all %}{{ p.get_full_name|default:p.username }}{% if not forloop.last %}, {% endif %}{% endfor %}
+        </div>
+      {% endif %}
+      <div class="tags">
+        {% if not c.est_actif %}<span class="tag tag-muted">Inactif</span>{% endif %}
+        <span class="tag tag-muted">{{ c.inscriptions.count }} inscrit{{ c.inscriptions.count|pluralize }}</span>
+      </div>
     </div>
-    {% if user.role != "PROFESSEUR" %}
-    <div class="footer-actions no-print">
-      <a href="{% url 'academique:modifier_cours' c.pk %}" class="icon-btn" title="Modifier"><i class="bi bi-pencil"></i></a>
+    {% if user.role != 'PROFESSEUR' %}
+    <div class="footer-actions">
+      <a href="{% url 'academique:modifier_cours' c.pk %}" class="icon-btn" title="Modifier">
+        <i class="bi bi-pencil"></i>
+      </a>
     </div>
     {% endif %}
   </div>
-  {% empty %}<div class="panel" style="grid-column:1/-1; padding:2rem; text-align:center; color:var(--muted);">Aucun cours.</div>{% endfor %}
+  {% empty %}
+  <div class="panel" style="grid-column: 1/-1; padding: 2rem; text-align: center; color: var(--up-muted);">
+    Aucun cours trouvé.
+  </div>
+  {% endfor %}
 </div>
+
 {% include "pagination.html" %}
 {% endblock %}
