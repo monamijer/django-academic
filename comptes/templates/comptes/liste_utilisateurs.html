@@ -17,7 +17,7 @@
       <tr>
         <td style="font-weight:600;"><i class="bi bi-person-circle" style="color:var(--muted);"></i> {{ u.get_full_name|default:u.username }}</td>
         <td style="color:var(--muted);">{{ u.email|default:"—" }}</td>
-        <td>{% if u.est_administrateur %}<span class="tag tag-warn">Administrateur</span>{% else %}{% for g in u.groups.all %}<span class="tag tag-muted">{{ g.name }}</span>{% empty %}<span style="color:var(--muted);">Standard</span>{% endfor %}{% endif %}</td>
+        <td><span class="tag {% if u.est_admin_systeme %}tag-warn{% else %}tag-muted{% endif %}">{{ u.get_role_display }}</span></td>
         <td>{% if u.est_actif_compte %}<span class="tag tag-ok"><i class="bi bi-check-circle"></i> Actif</span>{% else %}<span class="tag tag-bad"><i class="bi bi-slash-circle"></i> Désactivé</span>{% endif %}</td>
         <td class="no-print">
           <a href="{% url 'comptes:modifier_utilisateur' u.pk %}" class="icon-btn" title="Modifier"><i class="bi bi-pencil"></i></a>
