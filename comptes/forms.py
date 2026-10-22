@@ -126,44 +126,53 @@ class UtilisateurForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.fields["facultes_gerees"].queryset = Faculte.objects.filter(est_active=True).order_by("nom")
+        scopes = ("facultes_gerees", "departements_diriges", "departements_enseignes")
         deps_qs = (
             Departement.objects.filter(est_actif=True)
             .select_related("faculte").order_by("faculte__nom", "nom")
         )
-        self.fields["departements_diriges"].queryset = deps_qs
-        self.fields["departements_enseignes"].queryset = deps_qs
 
-        for f in ("facultes_gerees", "departements_diriges", "departements_enseignes"):
-            self.fields[f].required = False
+        if "facultes_gerees" in self.fields:
+            self.fields["facultes_gerees"].queryset = (
+                Faculte.objects.filter(est_active=True).order_by("nom")
+            )
+        for f in ("departements_diriges", "departements_enseignes"):
+            if f in self.fields:
+                self.fields[f].queryset = deps_qs
+        for f in scopes:
+            if f in self.fields:
+                self.fields[f].required = False
 
         # Hide ADMIN_SYSTEME and ETUDIANT from ordinary account management.
         # An existing system administrator keeps the correct displayed role,
         # and cannot change it through this form.
-        if self.instance and self.instance.pk and (
-            self.instance.role == Utilisateur.Role.ADMIN_SYSTEME
-        ):
-            self.fields["role"].choices = [
-                (code, label)
-                for code, label in self.fields["role"].choices
-                if code != Utilisateur.Role.ETUDIANT
-            ]
-            self.fields["role"].disabled = True
-        else:
-            self.fields["role"].choices = [
-                (code, label)
-                for code, label in self.fields["role"].choices
-                if code not in (
-                    Utilisateur.Role.ADMIN_SYSTEME,
-                    Utilisateur.Role.ETUDIANT,
-                )
-            ]
+        if "role" in self.fields:
+            if self.instance and self.instance.pk and (
+                self.instance.role == Utilisateur.Role.ADMIN_SYSTEME
+            ):
+                self.fields["role"].choices = [
+                    (code, label)
+                    for code, label in self.fields["role"].choices
+                    if code != Utilisateur.Role.ETUDIANT
+                ]
+                self.fields["role"].disabled = True
+            else:
+                self.fields["role"].choices = [
+                    (code, label)
+                    for code, label in self.fields["role"].choices
+                    if code not in (
+                        Utilisateur.Role.ADMIN_SYSTEME,
+                        Utilisateur.Role.ETUDIANT,
+                    )
+                ]
 
         # Pré-remplissage en édition
         if self.instance and self.instance.pk:
             for field_name in (
                 "facultes_gerees", "departements_diriges", "departements_enseignes",
             ):
+                if field_name not in self.fields:
+                    continue
                 values = list(getattr(self.instance, field_name).values_list("pk", flat=True))
                 if values:
                     self.fields[field_name].initial = values
@@ -171,6 +180,10 @@ class UtilisateurForm(forms.ModelForm):
     def clean(self):
         cleaned = super().clean()
         role = cleaned.get("role")
+
+        # Subclasses such as EtudiantCreationForm intentionally omit these fields.
+        if "role" not in self.fields:
+            return cleaned
 
         if role == Utilisateur.Role.ADMIN_SYSTEME:
             existant = Utilisateur.objects.filter(role=Utilisateur.Role.ADMIN_SYSTEME)
