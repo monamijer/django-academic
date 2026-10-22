@@ -1,0 +1,70 @@
+.up-site-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+  padding: 1.5rem clamp(1rem, 4vw, 3rem);
+  margin-top: 2rem;
+  border-top: 1px solid #dce3ed;
+  background: #f8fafc;
+  color: #526176;
+  font-family: Inter, sans-serif;
+  font-size: 0.875rem;
+}
+
+.up-site-footer__brand {
+  color: #172b4d;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.up-site-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+}
+
+.up-site-footer a {
+  color: #2459a9;
+  text-decoration: none;
+}
+
+.up-site-footer a:hover,
+.up-site-footer a:focus-visible {
+  text-decoration: underline;
+}
+
+.up-policy {
+  width: min(100% - 2rem, 900px);
+  margin: 2rem auto 3rem;
+  color: #243247;
+  line-height: 1.75;
+}
+
+.up-policy h1 {
+  margin-bottom: 1rem;
+  color: #172b4d;
+}
+
+.up-policy h2 {
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  color: #172b4d;
+  font-size: 1.25rem;
+}
+
+.up-policy__notice {
+  padding: 1rem 1.25rem;
+  border-left: 4px solid #2459a9;
+  border-radius: 0.25rem;
+  background: #f1f5fb;
+  font-size: 0.925rem;
+}
+
+@media (max-width: 600px) {
+  .up-site-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

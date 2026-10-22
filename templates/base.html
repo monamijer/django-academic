@@ -17,6 +17,7 @@
 <link rel="stylesheet" href="{% static 'css/components.css' %}">
 <link rel="stylesheet" href="{% static 'css/forms.css' %}">
 <link rel="stylesheet" href="{% static 'css/legacy.css' %}">
+<link rel="stylesheet" href="{% static 'css/footer.css' %}">
 
 {% block extra_css %}{% endblock %}
 </head>
@@ -114,6 +115,15 @@
   {% endfor %}
   {% block contenu %}{% endblock %}
 </main>
+
+<footer class="up-site-footer">
+  <span class="up-site-footer__brand">UNIVPILOT</span>
+  <nav class="up-site-footer__links" aria-label="Informations légales">
+    <a href="{% url 'politique_vie_privee' %}">Vie privée</a>
+    <a href="{% url 'politique_confidentialite' %}">Confidentialité</a>
+  </nav>
+  <span>&copy; {% now "Y" %} UNIVPILOT · Gestion universitaire</span>
+</footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
 <script src="{% static 'js/navbar.js' %}"></script>

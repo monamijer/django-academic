@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'css/registre.css' %}">
+<link rel="stylesheet" href="{% static 'css/footer.css' %}">
 </head>
 <body class="registre">
 
@@ -44,9 +45,13 @@
   {% block contenu %}{% endblock %}
 </main>
 
-<footer class="pied">
-  <span>univpilot · gestion universitaire</span>
-  <span>document généré le {% now "d.m.Y à H:i" %}</span>
+<footer class="pied up-site-footer">
+  <span class="up-site-footer__brand">UNIVPILOT · Gestion universitaire</span>
+  <nav class="up-site-footer__links" aria-label="Informations légales">
+    <a href="{% url 'politique_vie_privee' %}">Vie privée</a>
+    <a href="{% url 'politique_confidentialite' %}">Confidentialité</a>
+  </nav>
+  <span>Document généré le {% now "d.m.Y à H:i" %}</span>
 </footer>
 
 <script src="{% static 'js/registre.js' %}" defer></script>
