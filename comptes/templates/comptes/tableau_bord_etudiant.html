@@ -10,6 +10,7 @@
     Votre fiche étudiant n'est pas encore complétée. Contactez le secrétariat.
   </div>
 {% else %}
+<section class="up-hero mb-4">
   <h1>Bonjour, {{ fiche.utilisateur.first_name|default:fiche.utilisateur.username }} 👋</h1>
   <p>
     {{ fiche.filiere.departement.faculte.nom|default:"—" }} ·
@@ -48,7 +49,6 @@
     </div>
   </div>
 </section>
-
 {% if annee %}
 <section class="up-panel mb-4">
   <div class="up-panel__head">
@@ -89,7 +89,6 @@
   </div>
 </section>
 {% endif %}
-
 <div class="row g-4">
   <div class="col-lg-8">
     <div class="up-panel h-100">
