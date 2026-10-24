@@ -145,3 +145,9 @@ MIT — feel free to use, modify, and distribute. See [LICENSE](LICENSE) for det
 ---
 
 *Made with ☕ and Django — for educational purposes.*
+
+---
+
+*Originally built with ☕ and Django as an educational project. Preserved in its final maintained state for learning and reference purposes.*
+
+**Status:** Unmaintained — no updates planned for the foreseeable future.
