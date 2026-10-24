@@ -1,3 +1,12 @@
+> [!WARNING]
+> **UNMAINTAINED PROJECT**
+>
+> UNIVPILOT is no longer actively maintained, and no further updates or maintenance are planned for the foreseeable future.
+>
+> Bug fixes, security patches, dependency updates, and feature requests will not be addressed. The project is preserved as-is for educational and reference purposes.
+>
+> You are welcome to explore, fork, and modify the code, but use it at your own risk. It is **not recommended for production use**.
+
 # 🎓 UNIVPILOT — University Management (Students & Staff)
 
 > Django project for the exam: a university management web app with authentication, role hierarchy, activity history, scope-limited CRUD, and printable reports.
